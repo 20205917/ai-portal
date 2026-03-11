@@ -17,17 +17,54 @@ import {
 
 const SETTINGS_FILE = "settings.json";
 const RUNTIME_FILE = "runtime.json";
+const SETTINGS_WRITE_DEBOUNCE_MS = 200;
+const RUNTIME_WRITE_DEBOUNCE_MS = 200;
+
+function serializeJson(value: unknown): string {
+  return JSON.stringify(value, null, 2);
+}
+
+function sameWindowBounds(left: WindowBounds, right: WindowBounds): boolean {
+  return (
+    left.width === right.width
+    && left.height === right.height
+    && left.x === right.x
+    && left.y === right.y
+  );
+}
+
+function sameRuntimeSnapshot(left: RuntimeSnapshot, right: RuntimeSnapshot): boolean {
+  return (
+    left.state === right.state
+    && left.activeProviderId === right.activeProviderId
+    && left.updatedAt === right.updatedAt
+  );
+}
+
+function cloneRuntimeSnapshot(snapshot: RuntimeSnapshot): RuntimeSnapshot {
+  return {
+    state: snapshot.state,
+    activeProviderId: snapshot.activeProviderId,
+    updatedAt: snapshot.updatedAt
+  };
+}
 
 export class AppStore {
   private readonly settingsPath: string;
   private readonly runtimePath: string;
   private settingsCache: AppSettings;
+  private runtimeCache: RuntimeSnapshot | null = null;
+  private lastPersistedSettingsJson: string;
+  private lastPersistedRuntimeJson = "";
+  private settingsWriteTimer: NodeJS.Timeout | null = null;
+  private runtimeWriteTimer: NodeJS.Timeout | null = null;
 
   constructor(private readonly configDir: string) {
     fs.mkdirSync(configDir, { recursive: true });
     this.settingsPath = path.join(configDir, SETTINGS_FILE);
     this.runtimePath = path.join(configDir, RUNTIME_FILE);
     this.settingsCache = readSettingsFile(this.settingsPath);
+    this.lastPersistedSettingsJson = serializeJson(this.settingsCache);
     this.applyStartupResetPolicy();
   }
 
@@ -44,7 +81,7 @@ export class AppStore {
       version: SETTINGS_VERSION,
       startupResetDone: true
     };
-    this.persistSettings();
+    this.persistSettingsNow();
   }
 
   private backupSettingsFile(): void {
@@ -62,8 +99,55 @@ export class AppStore {
     fs.copyFileSync(this.settingsPath, backupPath);
   }
 
-  private persistSettings(): void {
-    fs.writeFileSync(this.settingsPath, JSON.stringify(this.settingsCache, null, 2));
+  private persistSettingsNow(): void {
+    if (this.settingsWriteTimer) {
+      clearTimeout(this.settingsWriteTimer);
+      this.settingsWriteTimer = null;
+    }
+
+    const serialized = serializeJson(this.settingsCache);
+    if (serialized === this.lastPersistedSettingsJson) {
+      return;
+    }
+    fs.writeFileSync(this.settingsPath, serialized);
+    this.lastPersistedSettingsJson = serialized;
+  }
+
+  private persistSettingsDebounced(): void {
+    if (this.settingsWriteTimer) {
+      clearTimeout(this.settingsWriteTimer);
+    }
+    this.settingsWriteTimer = setTimeout(() => {
+      this.settingsWriteTimer = null;
+      this.persistSettingsNow();
+    }, SETTINGS_WRITE_DEBOUNCE_MS);
+  }
+
+  private persistRuntimeNow(): void {
+    if (this.runtimeWriteTimer) {
+      clearTimeout(this.runtimeWriteTimer);
+      this.runtimeWriteTimer = null;
+    }
+    if (!this.runtimeCache) {
+      return;
+    }
+
+    const serialized = serializeJson(this.runtimeCache);
+    if (serialized === this.lastPersistedRuntimeJson) {
+      return;
+    }
+    fs.writeFileSync(this.runtimePath, serialized);
+    this.lastPersistedRuntimeJson = serialized;
+  }
+
+  private persistRuntimeDebounced(): void {
+    if (this.runtimeWriteTimer) {
+      clearTimeout(this.runtimeWriteTimer);
+    }
+    this.runtimeWriteTimer = setTimeout(() => {
+      this.runtimeWriteTimer = null;
+      this.persistRuntimeNow();
+    }, RUNTIME_WRITE_DEBOUNCE_MS);
   }
 
   getSettings(): AppSettings {
@@ -81,15 +165,23 @@ export class AppStore {
       version: SETTINGS_VERSION,
       startupResetDone: true
     };
-    this.persistSettings();
+    this.persistSettingsNow();
     return this.getSettings();
   }
 
   saveWindowBounds(bounds: WindowBounds): AppSettings {
-    return this.updateSettings((current) => ({
-      ...current,
-      windowBounds: bounds
-    }));
+    if (sameWindowBounds(this.settingsCache.windowBounds, bounds)) {
+      return this.getSettings();
+    }
+
+    this.settingsCache = {
+      ...this.settingsCache,
+      version: SETTINGS_VERSION,
+      startupResetDone: true,
+      windowBounds: { ...bounds }
+    };
+    this.persistSettingsDebounced();
+    return this.getSettings();
   }
 
   saveLastProviderId(providerId: string): AppSettings {
@@ -159,6 +251,15 @@ export class AppStore {
   }
 
   saveRuntime(snapshot: RuntimeSnapshot): void {
-    fs.writeFileSync(this.runtimePath, JSON.stringify(snapshot, null, 2));
+    if (this.runtimeCache && sameRuntimeSnapshot(this.runtimeCache, snapshot)) {
+      return;
+    }
+    this.runtimeCache = cloneRuntimeSnapshot(snapshot);
+    this.persistRuntimeDebounced();
+  }
+
+  flushPendingWrites(): void {
+    this.persistSettingsNow();
+    this.persistRuntimeNow();
   }
 }

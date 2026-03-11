@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 
 const REQUEST_TIMEOUT_MS = 7000;
 const MAX_ICON_BYTES = 256 * 1024;
@@ -236,9 +236,57 @@ async function fetchIconDataUrl(fetchFn: FetchFn, url: string): Promise<string |
   }
 }
 
-function fetchIconDataUrlByCurl(url: string): string | null {
-  const head = spawnSync(
-    "curl",
+function runCurl(args: string[], maxBuffer: number, timeoutMs: number): Promise<Buffer | null> {
+  return new Promise((resolve) => {
+    const child = spawn("curl", args, {
+      stdio: ["ignore", "pipe", "ignore"]
+    });
+    const chunks: Buffer[] = [];
+    let bytes = 0;
+    let settled = false;
+    let overflow = false;
+
+    const finalize = (output: Buffer | null) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeoutId);
+      resolve(output);
+    };
+
+    const timeoutId = setTimeout(() => {
+      child.kill("SIGKILL");
+      finalize(null);
+    }, timeoutMs);
+
+    child.stdout.on("data", (chunk: Buffer | string) => {
+      const payload = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      bytes += payload.length;
+      if (bytes > maxBuffer) {
+        overflow = true;
+        child.kill("SIGKILL");
+        return;
+      }
+      chunks.push(payload);
+    });
+
+    child.on("error", () => {
+      finalize(null);
+    });
+
+    child.on("close", (code) => {
+      if (code !== 0 || overflow) {
+        finalize(null);
+        return;
+      }
+      finalize(Buffer.concat(chunks));
+    });
+  });
+}
+
+async function fetchIconDataUrlByCurl(url: string): Promise<string | null> {
+  const head = await runCurl(
     [
       "-fsSLI",
       "--max-time",
@@ -247,16 +295,14 @@ function fetchIconDataUrlByCurl(url: string): string | null {
       "5",
       url
     ],
-    {
-      encoding: "utf8",
-      maxBuffer: 64 * 1024
-    }
+    64 * 1024,
+    13_000
   );
-  if (head.status !== 0 || !head.stdout) {
+  if (!head) {
     return null;
   }
 
-  const contentTypeMatches = [...head.stdout.matchAll(/^content-type:\s*([^\r\n]+)/gim)];
+  const contentTypeMatches = [...head.toString("utf8").matchAll(/^content-type:\s*([^\r\n]+)/gim)];
   const contentType = contentTypeMatches.length > 0
     ? contentTypeMatches[contentTypeMatches.length - 1]?.[1] || null
     : null;
@@ -265,8 +311,7 @@ function fetchIconDataUrlByCurl(url: string): string | null {
     return null;
   }
 
-  const get = spawnSync(
-    "curl",
+  const raw = await runCurl(
     [
       "-fsSL",
       "--max-time",
@@ -275,16 +320,13 @@ function fetchIconDataUrlByCurl(url: string): string | null {
       "5",
       url
     ],
-    {
-      encoding: null,
-      maxBuffer: MAX_ICON_BYTES + 1024
-    }
+    MAX_ICON_BYTES + 1024,
+    13_000
   );
-  if (get.status !== 0 || !get.stdout) {
+  if (!raw) {
     return null;
   }
 
-  const raw = Buffer.from(get.stdout);
   if (raw.length <= 0 || raw.length > MAX_ICON_BYTES) {
     return null;
   }
@@ -330,7 +372,7 @@ export class ProviderIconService {
 
     // Last fallback for proxy-heavy environments where Node/Electron fetch may fail
     // but curl can still reach the target through user proxy tooling.
-    const curlFallback = fetchIconDataUrlByCurl(googleFaviconUrl(finalUrl.hostname));
+    const curlFallback = await fetchIconDataUrlByCurl(googleFaviconUrl(finalUrl.hostname));
     if (curlFallback) {
       return curlFallback;
     }

@@ -310,6 +310,10 @@ code {
   display: flex;
 }
 
+.workspace-content.is-hidden {
+  display: none;
+}
+
 .workspace-content-full {
   padding: 0;
 }
@@ -330,6 +334,10 @@ code {
   border-radius: 0;
   overflow: hidden;
   background: #05080b;
+}
+
+.provider-webview.is-hidden {
+  display: none;
 }
 
 .webview-overlay {

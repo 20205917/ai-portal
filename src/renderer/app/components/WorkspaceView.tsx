@@ -1,10 +1,16 @@
+import { useEffect, useMemo, useState } from "react";
+
 import type { ProviderDefinition } from "../../../shared/types";
 import { partitionFor } from "../provider-visual";
 import type { WebviewHost, WebviewLoadState } from "../types";
 
+const MAX_RETAINED_EMBEDDED_WEBVIEWS = 3;
+
 interface WorkspaceViewProps {
+  visible: boolean;
   activeProvider: ProviderDefinition;
   activeEmbeddedProvider: ProviderDefinition | null;
+  embeddedProviders: ProviderDefinition[];
   webviewState: WebviewLoadState;
   webviewError: string;
   bindWebviewNode: (element: Element | null) => void;
@@ -13,56 +19,105 @@ interface WorkspaceViewProps {
 
 export function WorkspaceView(props: WorkspaceViewProps) {
   const {
+    visible,
     activeProvider,
     activeEmbeddedProvider,
+    embeddedProviders,
     webviewState,
     webviewError,
     bindWebviewNode,
     onRetryEmbeddedPage
   } = props;
+  const activeEmbeddedProviderId = activeEmbeddedProvider?.id ?? null;
+  const [retainedEmbeddedProviderIds, setRetainedEmbeddedProviderIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!activeEmbeddedProviderId) {
+      return;
+    }
+    setRetainedEmbeddedProviderIds((current) => {
+      const next = current.filter((providerId) => providerId !== activeEmbeddedProviderId);
+      next.push(activeEmbeddedProviderId);
+      while (next.length > MAX_RETAINED_EMBEDDED_WEBVIEWS) {
+        next.shift();
+      }
+      if (next.length === current.length && next.every((providerId, index) => providerId === current[index])) {
+        return current;
+      }
+      return next;
+    });
+  }, [activeEmbeddedProviderId]);
+
+  useEffect(() => {
+    const validIds = new Set(embeddedProviders.map((provider) => provider.id));
+    setRetainedEmbeddedProviderIds((current) => {
+      const next = current.filter((providerId) => validIds.has(providerId));
+      if (next.length === current.length) {
+        return current;
+      }
+      return next;
+    });
+  }, [embeddedProviders]);
+
+  const mountedEmbeddedProviders = useMemo(() => {
+    const retainedIds = new Set(retainedEmbeddedProviderIds);
+    if (activeEmbeddedProviderId) {
+      retainedIds.add(activeEmbeddedProviderId);
+    }
+    return embeddedProviders.filter((provider) => retainedIds.has(provider.id));
+  }, [activeEmbeddedProviderId, embeddedProviders, retainedEmbeddedProviderIds]);
 
   return (
-    <section className="workspace-content workspace-content-full">
-      {activeEmbeddedProvider ? (
+    <section className={`workspace-content workspace-content-full ${visible ? "" : "is-hidden"}`}>
+      {mountedEmbeddedProviders.length > 0 ? (
         <div className="webview-shell">
-          <webview
-            key={`${activeEmbeddedProvider.id}:${activeEmbeddedProvider.engine}`}
-            ref={bindWebviewNode as (element: WebviewHost | null) => void}
-            className="provider-webview is-active"
-            src={activeEmbeddedProvider.url}
-            partition={partitionFor(activeEmbeddedProvider)}
-            allowpopups="true"
-          />
-          {webviewState === "loading" ? (
-            <div className="webview-overlay">
-              <div className="webview-overlay-card">
-                <div className="loading-dot" aria-hidden="true" />
-                <strong>正在加载 {activeEmbeddedProvider.label}</strong>
-                <p>正在连接目标站点，请稍候…</p>
-              </div>
-            </div>
-          ) : null}
-          {webviewState === "error" ? (
-            <div className="webview-overlay">
-              <div className="webview-overlay-card">
-                <strong>{activeEmbeddedProvider.label} 无法正常显示</strong>
-                <p>{webviewError || "页面加载失败，请重试。"}</p>
-                <div className="webview-overlay-actions">
-                  <button type="button" onClick={onRetryEmbeddedPage}>
-                    重试加载
-                  </button>
-                  {activeEmbeddedProvider.fallbackMode === "isolated-external" ? (
-                    <button
-                      type="button"
-                      className="primary-action"
-                      onClick={() => void window.aidc.openExternalProvider(activeEmbeddedProvider.id)}
-                    >
-                      改用独立窗口
-                    </button>
-                  ) : null}
+          {mountedEmbeddedProviders.map((provider) => {
+            const active = provider.id === activeEmbeddedProviderId;
+            return (
+              <webview
+                key={`${provider.id}:${provider.engine}`}
+                ref={active ? (bindWebviewNode as (element: WebviewHost | null) => void) : undefined}
+                className={`provider-webview ${active ? "is-active" : "is-hidden"}`}
+                src={provider.url}
+                partition={partitionFor(provider)}
+                allowpopups="true"
+              />
+            );
+          })}
+          {activeEmbeddedProvider ? (
+            <>
+              {webviewState === "loading" || webviewState === "idle" ? (
+                <div className="webview-overlay">
+                  <div className="webview-overlay-card">
+                    <div className="loading-dot" aria-hidden="true" />
+                    <strong>正在加载 {activeEmbeddedProvider.label}</strong>
+                    <p>正在连接目标站点，请稍候…</p>
+                  </div>
                 </div>
-              </div>
-            </div>
+              ) : null}
+              {webviewState === "error" ? (
+                <div className="webview-overlay">
+                  <div className="webview-overlay-card">
+                    <strong>{activeEmbeddedProvider.label} 无法正常显示</strong>
+                    <p>{webviewError || "页面加载失败，请重试。"}</p>
+                    <div className="webview-overlay-actions">
+                      <button type="button" onClick={onRetryEmbeddedPage}>
+                        重试加载
+                      </button>
+                      {activeEmbeddedProvider.fallbackMode === "isolated-external" ? (
+                        <button
+                          type="button"
+                          className="primary-action"
+                          onClick={() => void window.aidc.openExternalProvider(activeEmbeddedProvider.id)}
+                        >
+                          改用独立窗口
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </>
           ) : null}
         </div>
       ) : null}

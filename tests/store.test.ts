@@ -78,4 +78,46 @@ describe("AppStore", () => {
     const backups = fs.readdirSync(dir).filter((name) => name.startsWith("settings.backup."));
     expect(backups.length).toBe(1);
   });
+
+  it("debounces bounds/runtime writes and flushes latest state", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "aidc-store-debounce-"));
+    tempDirs.push(dir);
+
+    const store = new AppStore(dir);
+    for (let index = 0; index < 20; index += 1) {
+      store.saveWindowBounds({
+        x: index,
+        y: index + 1,
+        width: 1200,
+        height: 820
+      });
+    }
+    for (let index = 0; index < 20; index += 1) {
+      store.saveRuntime({
+        state: "visible-focused",
+        activeProviderId: "chatgpt",
+        updatedAt: `2026-03-11T09:00:${String(index).padStart(2, "0")}.000Z`
+      });
+    }
+    store.flushPendingWrites();
+
+    const reloaded = new AppStore(dir);
+    const settings = reloaded.getSettings();
+    expect(settings.windowBounds).toEqual({
+      x: 19,
+      y: 20,
+      width: 1200,
+      height: 820
+    });
+
+    const runtimePath = path.join(dir, "runtime.json");
+    const runtime = JSON.parse(fs.readFileSync(runtimePath, "utf8")) as {
+      updatedAt: string;
+      state: string;
+      activeProviderId: string;
+    };
+    expect(runtime.state).toBe("visible-focused");
+    expect(runtime.activeProviderId).toBe("chatgpt");
+    expect(runtime.updatedAt).toBe("2026-03-11T09:00:19.000Z");
+  });
 });

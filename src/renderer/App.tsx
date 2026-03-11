@@ -71,6 +71,10 @@ export function App() {
 
   const activeProvider = providers.find((provider) => provider.id === activeProviderId) ?? providers[0] ?? null;
   const visibleProviders = useMemo(() => providers.filter((provider) => provider.enabled), [providers]);
+  const embeddedProviders = useMemo(
+    () => visibleProviders.filter((provider) => provider.engine === "embedded"),
+    [visibleProviders]
+  );
   const activeEmbeddedProvider =
     view === "workspace" && activeProvider?.engine === "embedded" ? activeProvider : null;
   const {
@@ -180,16 +184,16 @@ export function App() {
             />
           ) : null}
 
-          {view === "workspace" ? (
-            <WorkspaceView
-              activeProvider={activeProvider}
-              activeEmbeddedProvider={activeEmbeddedProvider}
-              webviewState={webviewState}
-              webviewError={webviewError}
-              bindWebviewNode={bindWebviewNode}
-              onRetryEmbeddedPage={retryEmbeddedPage}
-            />
-          ) : null}
+          <WorkspaceView
+            visible={view === "workspace"}
+            activeProvider={activeProvider}
+            activeEmbeddedProvider={activeEmbeddedProvider}
+            embeddedProviders={embeddedProviders}
+            webviewState={webviewState}
+            webviewError={webviewError}
+            bindWebviewNode={bindWebviewNode}
+            onRetryEmbeddedPage={retryEmbeddedPage}
+          />
         </main>
       </div>
     </div>

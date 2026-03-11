@@ -137,6 +137,7 @@ export class AppCore {
 
   shutdown(): void {
     this.shutdownRequested = true;
+    this.store.flushPendingWrites();
     this.commandServer.close();
     this.trayController?.destroy();
   }
@@ -176,14 +177,19 @@ export class AppCore {
   }
 
   private syncRuntime(): RuntimeSnapshot {
-    this.runtime = {
-      state: this.deriveRuntimeState(),
-      activeProviderId: this.activeProviderId,
-      updatedAt: new Date().toISOString()
-    };
-    this.store.saveRuntime(this.runtime);
+    const nextState = this.deriveRuntimeState();
+    const hasChanged = nextState !== this.runtime.state || this.activeProviderId !== this.runtime.activeProviderId;
+    if (hasChanged) {
+      this.runtime = {
+        state: nextState,
+        activeProviderId: this.activeProviderId,
+        updatedAt: new Date().toISOString()
+      };
+      this.store.saveRuntime(this.runtime);
+    }
+
     const window = this.windowController.getWindow();
-    if (window && !window.isDestroyed()) {
+    if (hasChanged && window && !window.isDestroyed()) {
       broadcastRuntime(window, this.runtime);
     }
     this.trayController?.refreshMenu(this.runtime.state);
