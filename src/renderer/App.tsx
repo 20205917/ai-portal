@@ -143,52 +143,55 @@ export function App() {
   }
 
   return (
-    <div className="app-shell">
-      <Sidebar
-        view={view}
-        runtime={runtime}
-        runtimeLabel={runtimeLabels[runtime.state]}
-        visibleProviders={visibleProviders}
-        activeProviderId={activeProviderId}
-        onOpenProvider={openProvider}
-        onSetView={setView}
-      />
+    <div className="app-frame">
+      <div className="window-drag-region" aria-hidden="true" />
+      <div className="app-shell">
+        <Sidebar
+          view={view}
+          runtime={runtime}
+          runtimeLabel={runtimeLabels[runtime.state]}
+          visibleProviders={visibleProviders}
+          activeProviderId={activeProviderId}
+          onOpenProvider={openProvider}
+          onSetView={setView}
+        />
 
-      <main className="workspace">
-        {view === "home" ? (
-          <HomeView
-            providers={providers}
-            visibleProviders={visibleProviders}
-            form={form}
-            formBusy={formBusy}
-            formError={formError}
-            setForm={setForm}
-            onOpenProvider={openProvider}
-            onToggleProviderVisibility={toggleProviderVisibility}
-            onRemoveProvider={removeProvider}
-            onCreateProvider={handleCreateProvider}
-          />
-        ) : null}
+        <main className="workspace">
+          {view === "home" ? (
+            <HomeView
+              providers={providers}
+              visibleProviders={visibleProviders}
+              form={form}
+              formBusy={formBusy}
+              formError={formError}
+              setForm={setForm}
+              onOpenProvider={openProvider}
+              onToggleProviderVisibility={toggleProviderVisibility}
+              onRemoveProvider={removeProvider}
+              onCreateProvider={handleCreateProvider}
+            />
+          ) : null}
 
-        {view === "settings" ? (
-          <SettingsView
-            providers={providers}
-            engineLabels={engineLabels}
-            onSetProviderEngine={(providerId, engine) => window.aidc.setProviderEngine(providerId, engine)}
-          />
-        ) : null}
+          {view === "settings" ? (
+            <SettingsView
+              providers={providers}
+              engineLabels={engineLabels}
+              onSetProviderEngine={(providerId, engine) => window.aidc.setProviderEngine(providerId, engine)}
+            />
+          ) : null}
 
-        {view === "workspace" ? (
-          <WorkspaceView
-            activeProvider={activeProvider}
-            activeEmbeddedProvider={activeEmbeddedProvider}
-            webviewState={webviewState}
-            webviewError={webviewError}
-            bindWebviewNode={bindWebviewNode}
-            onRetryEmbeddedPage={retryEmbeddedPage}
-          />
-        ) : null}
-      </main>
+          {view === "workspace" ? (
+            <WorkspaceView
+              activeProvider={activeProvider}
+              activeEmbeddedProvider={activeEmbeddedProvider}
+              webviewState={webviewState}
+              webviewError={webviewError}
+              bindWebviewNode={bindWebviewNode}
+              onRetryEmbeddedPage={retryEmbeddedPage}
+            />
+          ) : null}
+        </main>
+      </div>
     </div>
   );
 }

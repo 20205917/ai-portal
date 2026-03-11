@@ -31,6 +31,16 @@ body {
   background: transparent;
 }
 
+.window-drag-region {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  height: 12px;
+  z-index: 1200;
+  -webkit-app-region: drag;
+}
+
 button,
 input,
 code {
@@ -74,16 +84,23 @@ code {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 68px 1fr;
+  grid-template-columns: 62px 1fr;
   gap: 8px;
   height: 100%;
+}
+
+.app-frame {
+  height: 100%;
   padding: 8px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: rgba(3, 9, 12, 0.55);
 }
 
 .sidebar,
 .workspace {
   min-height: 0;
-  border: 1px solid var(--panel-border);
+  border: none;
   background: rgba(4, 10, 12, 0.72);
   backdrop-filter: blur(18px);
   box-shadow: var(--shadow);
@@ -94,7 +111,7 @@ code {
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 6px;
+  padding: 7px 5px;
   border-radius: 20px;
 }
 
@@ -116,13 +133,13 @@ code {
 .dock-top {
   flex: 1;
   min-height: 0;
-  gap: 10px;
+  gap: 8px;
 }
 
 .provider-list {
   flex: 1;
   min-height: 0;
-  gap: 12px;
+  gap: 10px;
   overflow-y: auto;
   padding-right: 2px;
 }
@@ -137,7 +154,7 @@ code {
 }
 
 .sidebar-footer {
-  gap: 10px;
+  gap: 8px;
 }
 
 .dock-home,
@@ -146,10 +163,10 @@ code {
   position: relative;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   padding: 0;
-  border-radius: 15px;
+  border-radius: 16px;
   border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(255, 255, 255, 0.03);
   color: inherit;
@@ -200,13 +217,13 @@ code {
 }
 
 .dock-svg {
-  width: 19px;
-  height: 19px;
+  width: 21px;
+  height: 21px;
 }
 
 .gear-svg {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
 }
 
 .provider-icon,
@@ -214,16 +231,17 @@ code {
 .manage-icon {
   display: grid;
   place-items: center;
+  overflow: hidden;
   color: #f8fafc;
   border: 1px solid rgba(148, 163, 184, 0.12);
   font-weight: 700;
 }
 
 .provider-icon {
-  width: 31px;
-  height: 31px;
+  width: 34px;
+  height: 34px;
   border-radius: 11px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .home-card-icon,
@@ -234,10 +252,18 @@ code {
   font-size: 16px;
 }
 
+.provider-icon-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
 .provider-indicator {
   position: absolute;
-  right: 5px;
-  bottom: 5px;
+  right: 6px;
+  bottom: 6px;
   width: 6px;
   height: 6px;
   border-radius: 999px;
@@ -576,20 +602,20 @@ code {
 
 @media (max-width: 1100px) {
   .app-shell {
-    grid-template-columns: 60px 1fr;
+    grid-template-columns: 56px 1fr;
   }
 
   .dock-home,
   .settings-button,
   .provider-button {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
   }
 
   .provider-icon {
-    width: 27px;
-    height: 27px;
-    font-size: 12px;
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
   }
 
   .home-split,
