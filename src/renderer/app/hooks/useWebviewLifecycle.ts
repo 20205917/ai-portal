@@ -34,27 +34,14 @@ export function useWebviewLifecycle(activeEmbeddedProvider: ProviderDefinition |
     let disposed = false;
     const timeoutId = window.setTimeout(() => {
       if (!disposed) {
-        setWebviewState((current) => (current === "ready" ? current : "error"));
+        setWebviewState("error");
         setWebviewError("页面加载超时，可以重试或切到独立窗口。");
       }
     }, 20_000);
 
-    const onStart = () => {
-      setWebviewState("loading");
-      setWebviewError("");
-    };
     const onReady = () => {
       setWebviewState("ready");
       setWebviewError("");
-      window.clearTimeout(timeoutId);
-    };
-    const onStop = () => {
-      setWebviewState((current) => {
-        if (current === "error") {
-          return current;
-        }
-        return "ready";
-      });
       window.clearTimeout(timeoutId);
     };
     const onFail = (event: Event) => {
@@ -62,6 +49,7 @@ export function useWebviewLifecycle(activeEmbeddedProvider: ProviderDefinition |
       if (detail.errorCode === -3) {
         return;
       }
+
       setWebviewState("error");
       setWebviewError(
         `加载失败${detail.errorCode ? ` (${detail.errorCode})` : ""}${
@@ -71,17 +59,15 @@ export function useWebviewLifecycle(activeEmbeddedProvider: ProviderDefinition |
       window.clearTimeout(timeoutId);
     };
 
-    webviewNode.addEventListener("did-start-loading", onStart as EventListener);
     webviewNode.addEventListener("dom-ready", onReady as EventListener);
-    webviewNode.addEventListener("did-stop-loading", onStop as EventListener);
+    webviewNode.addEventListener("did-stop-loading", onReady as EventListener);
     webviewNode.addEventListener("did-fail-load", onFail as EventListener);
 
     return () => {
       disposed = true;
       window.clearTimeout(timeoutId);
-      webviewNode.removeEventListener("did-start-loading", onStart as EventListener);
       webviewNode.removeEventListener("dom-ready", onReady as EventListener);
-      webviewNode.removeEventListener("did-stop-loading", onStop as EventListener);
+      webviewNode.removeEventListener("did-stop-loading", onReady as EventListener);
       webviewNode.removeEventListener("did-fail-load", onFail as EventListener);
     };
   }, [webviewNode, activeEmbeddedProvider?.id]);

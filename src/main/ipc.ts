@@ -63,6 +63,7 @@ export function registerIpc(context: IpcContext): void {
   ipcMain.handle("app:open-external-provider", async (_event, providerId: string) => {
     await context.openExternalProvider(providerId);
   });
+
 }
 
 export function broadcastProviders(window: BrowserWindow, providers: ProviderDefinition[], activeProviderId: string): void {

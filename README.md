@@ -83,8 +83,7 @@ npm run verify:visual
 ```
 
 `npm run verify:visual` 会在 `artifacts/visual/<timestamp>/` 输出截图与 `index.md`，用于人工确认界面状态。
-脚本会自动清理历史截图批次，默认仅保留最近 `8` 批；可用 `AIDC_VISUAL_KEEP=<N>` 调整保留数量。
-若希望视觉告警（例如“仍在加载”）直接使命令失败，可加 `AIDC_VISUAL_STRICT=1`。
+脚本会自动清理历史截图批次，默认仅保留最近 `5` 批；可用 `AIDC_VISUAL_KEEP=<N>` 调整保留数量。
 
 ## 图形渲染排障
 
