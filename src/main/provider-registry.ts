@@ -9,7 +9,8 @@ function mergeProvider(provider: ProviderDefinition, overrides?: ProviderOverrid
   return {
     ...provider,
     enabled: overrides?.enabled ?? provider.enabled,
-    engine: overrides?.engine ?? provider.engine
+    engine: overrides?.engine ?? provider.engine,
+    iconDataUrl: overrides?.iconDataUrl ?? provider.iconDataUrl
   };
 }
 

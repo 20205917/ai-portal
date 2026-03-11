@@ -51,7 +51,11 @@ export function Sidebar(props: SidebarProps) {
                 onClick={() => void onOpenProvider(provider.id)}
               >
                 <span className="provider-icon" style={providerIconStyle(provider)}>
-                  {glyphFor(provider)}
+                  {provider.iconDataUrl ? (
+                    <img className="provider-icon-image" src={provider.iconDataUrl} alt="" />
+                  ) : (
+                    glyphFor(provider)
+                  )}
                 </span>
                 <span className="provider-indicator" aria-hidden="true" />
               </button>

@@ -72,6 +72,7 @@ function parseProvider(provider: unknown): ProviderDefinition | null {
     || typeof provider.url !== "string"
     || !isProviderEngine(provider.engine)
     || typeof provider.icon !== "string"
+    || (provider.iconDataUrl !== undefined && typeof provider.iconDataUrl !== "string")
     || typeof provider.enabled !== "boolean"
     || typeof provider.persistSession !== "boolean"
     || (provider.fallbackMode !== null && !isProviderEngine(provider.fallbackMode))
@@ -87,6 +88,7 @@ function parseProvider(provider: unknown): ProviderDefinition | null {
     url: provider.url,
     engine: provider.engine,
     icon: provider.icon,
+    iconDataUrl: provider.iconDataUrl,
     enabled: provider.enabled,
     persistSession: provider.persistSession,
     fallbackMode: provider.fallbackMode,
@@ -112,6 +114,9 @@ function parseProviderOverrides(value: unknown): AppSettings["providerOverrides"
     }
     if (isProviderEngine(rawOverride.engine)) {
       next.engine = rawOverride.engine;
+    }
+    if (typeof rawOverride.iconDataUrl === "string") {
+      next.iconDataUrl = rawOverride.iconDataUrl;
     }
     overrides[providerId] = next;
   }

@@ -23,6 +23,7 @@ describe("AppStore", () => {
     const store = new AppStore(dir);
     store.saveLastProviderId("doubao");
     store.saveProviderEngine("chatgpt", "isolated-external");
+    store.saveProviderIconDataUrl("chatgpt", "data:image/png;base64,AA==");
     const custom = store.addCustomProvider({
       label: "Claude",
       url: "claude.ai",
@@ -36,6 +37,7 @@ describe("AppStore", () => {
     expect(settings.startupResetDone).toBe(true);
     expect(settings.lastProviderId).toBe("doubao");
     expect(settings.providerOverrides.chatgpt.engine).toBe("isolated-external");
+    expect(settings.providerOverrides.chatgpt.iconDataUrl).toBe("data:image/png;base64,AA==");
     expect(settings.customProviders[0].id).toBe(custom.id);
     expect(settings.customProviders[0].url).toBe("https://claude.ai");
   });

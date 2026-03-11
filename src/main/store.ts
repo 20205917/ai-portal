@@ -125,6 +125,19 @@ export class AppStore {
     }));
   }
 
+  saveProviderIconDataUrl(providerId: string, iconDataUrl: string): AppSettings {
+    return this.updateSettings((current) => ({
+      ...current,
+      providerOverrides: {
+        ...current.providerOverrides,
+        [providerId]: {
+          ...current.providerOverrides[providerId],
+          iconDataUrl
+        }
+      }
+    }));
+  }
+
   addCustomProvider(input: NewProviderInput): ProviderDefinition {
     const provider = createCustomProvider(input);
     this.updateSettings((current) => ({

@@ -27,7 +27,8 @@ describe("resolveProviders", () => {
       windowBounds: { width: 1200, height: 900 },
       providerOverrides: {
         chatgpt: {
-          engine: "isolated-external"
+          engine: "isolated-external",
+          iconDataUrl: "data:image/png;base64,AA=="
         }
       },
       customProviders: []
@@ -37,6 +38,7 @@ describe("resolveProviders", () => {
     const chatgpt = providers.find((provider) => provider.id === "chatgpt");
 
     expect(chatgpt?.engine).toBe("isolated-external");
+    expect(chatgpt?.iconDataUrl).toBe("data:image/png;base64,AA==");
     expect(chatgpt?.fallbackMode).toBe("isolated-external");
   });
 

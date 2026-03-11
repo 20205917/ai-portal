@@ -1,15 +1,16 @@
 import { app } from "electron";
-
 import { CommandServer } from "./command-server";
 import { ExternalWindowManager } from "./external-window-manager";
 import { broadcastProviders, broadcastRuntime, registerIpc } from "./ipc";
 import { MainWindowController } from "./main-window-controller";
+import { ProviderIconOrchestrator } from "./provider-icon-orchestrator";
 import {
   isProviderEngineAllowed,
   pickDefaultProvider,
   resolveProviders
 } from "./provider-registry";
 import { AppStore } from "./store";
+import { TrayController } from "./tray-controller";
 import { parseAidcArgs, type CommandPayload, type CommandResponse } from "../shared/commands";
 import type {
   AppSettings,
@@ -24,12 +25,12 @@ interface AppCoreOptions {
   configDir: string;
   socketPath: string;
   iconPath: string;
+  trayIconPath: string;
   rendererIndex: string;
   rendererUrl?: string;
   hostEnvironment: HostEnvironment;
   debugRenderer: boolean;
 }
-
 export class AppCore {
   private providers: ProviderDefinition[];
   private activeProviderId: string;
@@ -39,6 +40,8 @@ export class AppCore {
   private readonly externalWindowManager: ExternalWindowManager;
   private readonly commandServer: CommandServer;
   private readonly windowController: MainWindowController;
+  private readonly providerIconOrchestrator: ProviderIconOrchestrator;
+  private trayController: TrayController | null = null;
 
   constructor(private readonly options: AppCoreOptions) {
     this.store = new AppStore(options.configDir);
@@ -50,7 +53,6 @@ export class AppCore {
       activeProviderId: this.activeProviderId,
       updatedAt: new Date().toISOString()
     };
-
     this.externalWindowManager = new ExternalWindowManager(options.iconPath, () => {
       this.syncRuntime();
     });
@@ -61,6 +63,7 @@ export class AppCore {
       rendererUrl: options.rendererUrl,
       debugRenderer: options.debugRenderer,
       getWindowBounds: () => this.getSettings().windowBounds,
+      shouldCloseWindow: () => this.shutdownRequested || this.trayController === null,
       onRuntimeSignal: () => this.syncRuntime(),
       onWindowClosed: () => {
         if (!this.shutdownRequested) {
@@ -73,6 +76,12 @@ export class AppCore {
       onAfterLoaded: () => {
         this.broadcastAppState();
       }
+    });
+    this.providerIconOrchestrator = new ProviderIconOrchestrator({
+      saveProviderIconDataUrl: (providerId, iconDataUrl) => {
+        this.store.saveProviderIconDataUrl(providerId, iconDataUrl);
+      },
+      onProviderIconUpdated: () => this.broadcastAppState()
     });
 
     registerIpc({
@@ -97,6 +106,18 @@ export class AppCore {
   async start(initialCommand: CommandPayload): Promise<void> {
     await this.commandServer.listen();
     await this.windowController.ensureWindow();
+    const tray = new TrayController({
+      iconPath: this.options.trayIconPath,
+      onToggleWindow: () => this.toggleMainWindow(),
+      onShowWindow: () => this.revealMainWindow(),
+      onHideWindow: () => this.hideMainWindow(),
+      onExitApp: () => {
+        this.shutdownRequested = true;
+        app.quit();
+      },
+      onTrayUnavailable: () => undefined
+    });
+    this.trayController = tray.isAvailable() ? tray : null;
 
     if (initialCommand.command === "hide") {
       await this.hideMainWindow();
@@ -106,7 +127,6 @@ export class AppCore {
       this.syncRuntime();
       return;
     }
-
     await this.handleCommand(initialCommand);
   }
 
@@ -118,6 +138,7 @@ export class AppCore {
   shutdown(): void {
     this.shutdownRequested = true;
     this.commandServer.close();
+    this.trayController?.destroy();
   }
 
   private getSettings(): AppSettings {
@@ -151,7 +172,6 @@ export class AppCore {
     if (!window.isVisible()) {
       return "hidden";
     }
-
     return window.isFocused() ? "visible-focused" : "visible-unfocused";
   }
 
@@ -166,6 +186,7 @@ export class AppCore {
     if (window && !window.isDestroyed()) {
       broadcastRuntime(window, this.runtime);
     }
+    this.trayController?.refreshMenu(this.runtime.state);
     return this.runtime;
   }
 
@@ -179,6 +200,7 @@ export class AppCore {
     if (window && !window.isDestroyed()) {
       broadcastProviders(window, this.providers, this.activeProviderId);
     }
+    this.providerIconOrchestrator.ensure(this.providers);
     this.syncRuntime();
   }
 
@@ -291,7 +313,6 @@ export class AppCore {
       case "status":
         break;
     }
-
     return {
       ok: true,
       ...this.syncRuntime()

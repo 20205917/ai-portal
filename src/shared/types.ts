@@ -7,6 +7,7 @@ export interface ProviderDefinition {
   url: string;
   engine: ProviderEngine;
   icon: string;
+  iconDataUrl?: string;
   enabled: boolean;
   persistSession: boolean;
   fallbackMode: ProviderEngine | null;
@@ -17,6 +18,7 @@ export interface ProviderDefinition {
 export interface ProviderOverrides {
   enabled?: boolean;
   engine?: ProviderEngine;
+  iconDataUrl?: string;
 }
 
 export interface NewProviderInput {

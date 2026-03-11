@@ -17,6 +17,7 @@ interface MainWindowControllerOptions {
   rendererUrl?: string;
   debugRenderer: boolean;
   getWindowBounds: () => WindowBounds;
+  shouldCloseWindow: () => boolean;
   onRuntimeSignal: () => void;
   onWindowClosed: () => void;
   onWindowBoundsChanged: (bounds: WindowBounds) => void;
@@ -47,6 +48,9 @@ export class MainWindowController {
       minWidth: WINDOW_MIN_WIDTH,
       minHeight: WINDOW_MIN_HEIGHT,
       show: false,
+      frame: false,
+      skipTaskbar: true,
+      type: process.platform === "linux" ? "toolbar" : undefined,
       autoHideMenuBar: true,
       title: `${TITLE_PREFIX} 调度台`,
       backgroundColor: "#0a1012",
@@ -74,6 +78,7 @@ export class MainWindowController {
 
   async reveal(): Promise<void> {
     const window = await this.ensureWindow();
+    window.setSkipTaskbar(true);
     window.show();
     window.focus();
     this.options.onRuntimeSignal();
@@ -104,6 +109,13 @@ export class MainWindowController {
     }
 
     await this.reveal();
+  }
+
+  setSkipTaskbar(skipTaskbar: boolean): void {
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+      return;
+    }
+    this.mainWindow.setSkipTaskbar(skipTaskbar);
   }
 
   private async loadWindow(window: BrowserWindow): Promise<void> {
@@ -163,9 +175,20 @@ export class MainWindowController {
   }
 
   private attachWindowEvents(window: BrowserWindow): void {
+    window.on("close", (event) => {
+      if (this.options.shouldCloseWindow()) {
+        return;
+      }
+      event.preventDefault();
+      window.hide();
+      this.options.onRuntimeSignal();
+    });
     window.on("focus", () => this.options.onRuntimeSignal());
     window.on("blur", () => this.options.onRuntimeSignal());
-    window.on("show", () => this.options.onRuntimeSignal());
+    window.on("show", () => {
+      window.setSkipTaskbar(true);
+      this.options.onRuntimeSignal();
+    });
     window.on("hide", () => this.options.onRuntimeSignal());
     window.on("resize", () => {
       this.options.onWindowBoundsChanged(window.getBounds());

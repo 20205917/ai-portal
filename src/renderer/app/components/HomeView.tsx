@@ -44,7 +44,11 @@ export function HomeView(props: HomeViewProps) {
               onClick={() => void onOpenProvider(provider.id)}
             >
               <span className="home-card-icon" style={providerIconStyle(provider)}>
-                {glyphFor(provider)}
+                {provider.iconDataUrl ? (
+                  <img className="provider-icon-image" src={provider.iconDataUrl} alt="" />
+                ) : (
+                  glyphFor(provider)
+                )}
               </span>
               <span className="home-card-text">
                 <strong>{provider.label}</strong>
@@ -63,7 +67,11 @@ export function HomeView(props: HomeViewProps) {
               <div className="manage-row" key={provider.id}>
                 <div className="manage-meta">
                   <span className="manage-icon" style={providerIconStyle(provider)}>
-                    {glyphFor(provider)}
+                    {provider.iconDataUrl ? (
+                      <img className="provider-icon-image" src={provider.iconDataUrl} alt="" />
+                    ) : (
+                      glyphFor(provider)
+                    )}
                   </span>
                   <div>
                     <strong>{provider.label}</strong>
@@ -87,7 +95,7 @@ export function HomeView(props: HomeViewProps) {
 
         <article className="panel">
           <h3>添加 AI 网页</h3>
-          <p>图标会根据名称和网址自动生成，不需要手动上传或单独维护。</p>
+          <p>图标会优先抓取网站 favicon，失败时自动回退为字母图标。</p>
           <form className="home-form" onSubmit={(event) => void onCreateProvider(event)}>
             <label className="field">
               <span>名称</span>

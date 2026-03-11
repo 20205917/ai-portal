@@ -12,6 +12,7 @@ import type { HostEnvironment } from "../shared/types";
 const configDir = resolveConfigDir();
 const socketPath = resolveSocketPath(configDir);
 const iconPath = path.resolve(__dirname, "../../assets/icon.svg");
+const trayIconPath = path.resolve(__dirname, "../../assets/tray-icon.png");
 const rendererIndex = path.resolve(__dirname, "../renderer/index.html");
 const rendererUrl = process.env.AIDC_RENDERER_URL;
 const debugRenderer = process.env.AIDC_DEBUG === "1";
@@ -49,6 +50,7 @@ const core = new AppCore({
   configDir,
   socketPath,
   iconPath,
+  trayIconPath,
   rendererIndex,
   rendererUrl,
   hostEnvironment,
