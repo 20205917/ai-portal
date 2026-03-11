@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
+  <title>AIDispatchCenter</title>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#111827" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="48" fill="url(#bg)" />
+  <path d="M72 72h112v28H72z" fill="#f3f4f6" />
+  <path d="M72 114h72v28H72z" fill="#d1fae5" />
+  <path d="M72 156h112v28H72z" fill="#fbbf24" />
+  <circle cx="184" cy="128" r="28" fill="#f3f4f6" />
+  <circle cx="184" cy="128" r="12" fill="#0f766e" />
+</svg>
+

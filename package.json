@@ -1,0 +1,37 @@
+{
+  "name": "aidispatchcenter",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ubuntu AI launcher with a dedicated desktop shell for precise toggle and focus workflows.",
+  "main": "dist/main/index.js",
+  "bin": {
+    "aidc": "./bin/aidc.mjs"
+  },
+  "scripts": {
+    "build": "npm run build:main && npm run build:renderer",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:renderer": "vite build",
+    "dev": "node scripts/dev.mjs",
+    "start": "node scripts/start.mjs",
+    "test": "vitest run",
+    "check:architecture": "node scripts/check-architecture.mjs",
+    "check:protocol": "node scripts/check-protocol.mjs",
+    "verify:gate": "bash scripts/verify-gate.sh",
+    "verify:visual": "node scripts/verify-visual.mjs"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "electron": "^37.2.0",
+    "playwright": "^1.54.0",
+    "typescript": "^5.8.2",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4"
+  }
+}
