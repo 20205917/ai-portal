@@ -17,10 +17,10 @@ delete env.ELECTRON_RUN_AS_NODE;
 const electronFlags = buildElectronFlags(env);
 
 function shouldBuildArtifacts() {
-  if (env.AIDC_SKIP_BUILD === "1") {
+  if (env.AIPROTAL_SKIP_BUILD === "1") {
     return false;
   }
-  if (env.AIDC_FORCE_BUILD === "1") {
+  if (env.AIPROTAL_FORCE_BUILD === "1") {
     return true;
   }
   return !fs.existsSync(distMainEntry) || !fs.existsSync(distRendererEntry);

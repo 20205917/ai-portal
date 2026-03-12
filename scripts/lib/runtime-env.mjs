@@ -3,7 +3,7 @@ import path from "node:path";
 
 export const COMMAND_NAMES = ["toggle", "show", "hide", "open", "status", "next", "prev"];
 
-const APP_DIR_NAME = "ai-protal";
+const APP_DIR_NAME = "AIProtal";
 const SOCKET_FILE_NAME = "aidc.sock";
 const WINDOWS_PIPE_PREFIX = "\\\\.\\pipe\\";
 
@@ -35,17 +35,17 @@ export function isNamedPipeEndpoint(endpoint) {
 
 export function shouldEnableNoSandbox(env = process.env, options = {}) {
   const platform = resolvePlatform(options);
-  if (env.AIDC_NO_SANDBOX === "1") {
+  if (env.AIPROTAL_NO_SANDBOX === "1") {
     return true;
   }
-  if (env.AIDC_NO_SANDBOX === "0") {
+  if (env.AIPROTAL_NO_SANDBOX === "0") {
     return false;
   }
   return platform === "linux";
 }
 
 export function shouldDisableGpu(env = process.env) {
-  return env.AIDC_DISABLE_GPU === "1";
+  return env.AIPROTAL_DISABLE_GPU === "1";
 }
 
 export function resolveConfigDir(env = process.env, options = {}) {

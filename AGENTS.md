@@ -28,9 +28,9 @@ npm run start
 npm run build
 npm test
 npm run verify:gate
-AIDC_REQUIRE_GUI=1 npm run verify:gate
+AIPROTAL_REQUIRE_GUI=1 npm run verify:gate
 npm run check:architecture
-AIDC_ARCH_FAIL_ON_WARN=1 npm run check:architecture
+AIPROTAL_ARCH_FAIL_ON_WARN=1 npm run check:architecture
 npm run verify:visual
 ```
 

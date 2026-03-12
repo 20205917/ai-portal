@@ -1,4 +1,4 @@
-# ai-protal 执行流程 v2
+# AIProtal 执行流程 v2
 
 ## 目标
 
@@ -85,7 +85,7 @@ npm run verify:gate
 若需要强制 GUI 可用性（例如本机验收），使用：
 
 ```bash
-AIDC_REQUIRE_GUI=1 npm run verify:gate
+AIPROTAL_REQUIRE_GUI=1 npm run verify:gate
 ```
 
 ## 升级条件

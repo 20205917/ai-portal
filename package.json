@@ -1,8 +1,8 @@
 {
-  "name": "ai-protal",
+  "name": "AIProtal",
   "version": "1.0.0",
   "private": true,
-  "description": "ai-protal is a Linux / Windows AI launcher with a dedicated desktop shell for precise toggle and focus workflows.",
+  "description": "AIProtal is a Linux / Windows AI launcher with a dedicated desktop shell for precise toggle and focus workflows.",
   "author": {
     "name": "zhangyj",
     "email": "zyj20205917@gmail"

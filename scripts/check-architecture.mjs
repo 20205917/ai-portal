@@ -34,7 +34,7 @@ function walk(dir) {
 
 const errors = [];
 const warnings = [];
-const strictWarnings = process.env.AIDC_ARCH_FAIL_ON_WARN === "1";
+const strictWarnings = process.env.AIPROTAL_ARCH_FAIL_ON_WARN === "1";
 
 const entryFileThresholds = [
   { file: "src/main/index.ts", warn: 260, fail: 380 },
@@ -84,7 +84,7 @@ const scriptFiles = [
 ];
 for (const file of scriptFiles) {
   const content = read(file);
-  if (content.includes("AIDC_NO_SANDBOX") || content.includes("AIDC_DISABLE_GPU")) {
+  if (content.includes("AIPROTAL_NO_SANDBOX") || content.includes("AIPROTAL_DISABLE_GPU")) {
     errors.push(`${file} 仍包含运行环境重复判定逻辑，请复用 scripts/lib/runtime-env.mjs`);
   }
 }
@@ -121,7 +121,7 @@ if (errors.length > 0 || (strictWarnings && warnings.length > 0)) {
     console.error(`- ${message}`);
   }
   if (strictWarnings && warnings.length > 0) {
-    console.error("- AIDC_ARCH_FAIL_ON_WARN=1：告警已按失败处理。");
+    console.error("- AIPROTAL_ARCH_FAIL_ON_WARN=1：告警已按失败处理。");
     for (const message of warnings) {
       console.error(`- ${message}`);
     }

@@ -14,9 +14,9 @@ const socketPath = resolveSocketPath(configDir, { platform: process.platform, en
 const iconPath = path.resolve(__dirname, "../../assets/icon.svg");
 const trayIconPath = path.resolve(__dirname, "../../assets/tray-icon.png");
 const rendererIndex = path.resolve(__dirname, "../renderer/index.html");
-const rendererUrl = process.env.AIDC_RENDERER_URL;
-const debugRenderer = process.env.AIDC_DEBUG === "1";
-const allowMultiInstance = process.env.AIDC_ALLOW_MULTI_INSTANCE === "1";
+const rendererUrl = process.env.AIPROTAL_RENDERER_URL;
+const debugRenderer = process.env.AIPROTAL_DEBUG === "1";
+const allowMultiInstance = process.env.AIPROTAL_ALLOW_MULTI_INSTANCE === "1";
 const enableNoSandbox = shouldEnableNoSandbox(process.env, process.platform);
 const enableDisableGpu = shouldDisableGpu(process.env);
 const initialCommand = parseAidcArgs(process.argv) ?? { command: "toggle" as const };

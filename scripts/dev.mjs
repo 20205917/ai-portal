@@ -12,7 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const env = {
   ...process.env,
-  AIDC_RENDERER_URL: "http://127.0.0.1:5173"
+  AIPROTAL_RENDERER_URL: "http://127.0.0.1:5173"
 };
 delete env.ELECTRON_RUN_AS_NODE;
 const electronFlags = buildElectronFlags(env);
@@ -87,7 +87,7 @@ async function main() {
   spawnChild("npm", ["exec", "--", "tsc", "-w", "-p", "tsconfig.main.json", "--preserveWatchOutput"]);
   spawnChild("npm", ["exec", "--", "vite"]);
 
-  await waitForRenderer(env.AIDC_RENDERER_URL);
+  await waitForRenderer(env.AIPROTAL_RENDERER_URL);
   await waitForMainOutput();
 
   const electron = spawnChild("npm", ["exec", "--", "electron", ...electronFlags, "."], {

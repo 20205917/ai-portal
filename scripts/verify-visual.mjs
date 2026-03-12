@@ -14,7 +14,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const artifactsRoot = path.join(rootDir, "artifacts", "visual");
 const require = createRequire(import.meta.url);
 const visualKeepRuns = Math.max(
-  Number.parseInt(process.env.AIDC_VISUAL_KEEP ?? "5", 10) || 5,
+  Number.parseInt(process.env.AIPROTAL_VISUAL_KEEP ?? "5", 10) || 5,
   1
 );
 
@@ -82,8 +82,8 @@ async function main() {
   const records = [];
   const appEnv = {
     ...process.env,
-    AIDC_ALLOW_MULTI_INSTANCE: "1",
-    AIDC_NO_SANDBOX: process.env.AIDC_NO_SANDBOX || "1"
+    AIPROTAL_ALLOW_MULTI_INSTANCE: "1",
+    AIPROTAL_NO_SANDBOX: process.env.AIPROTAL_NO_SANDBOX || "1"
   };
   delete appEnv.ELECTRON_RUN_AS_NODE;
   const electronFlags = buildElectronFlags(appEnv);

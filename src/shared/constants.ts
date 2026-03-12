@@ -1,6 +1,6 @@
-export const APP_ID = "io.ai-protal.app";
-export const APP_NAME = "ai-protal";
-export const TITLE_PREFIX = "ai-protal";
+export const APP_ID = "io.AIProtal.app";
+export const APP_NAME = "AIProtal";
+export const TITLE_PREFIX = "AIProtal";
 export const SETTINGS_VERSION = 3;
 export const WINDOW_MIN_WIDTH = 1080;
 export const WINDOW_MIN_HEIGHT = 720;

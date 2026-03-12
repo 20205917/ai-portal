@@ -29,9 +29,9 @@ if has_gui; then
   if echo "$show_status" | rg -q '"state":\s*"visible-(focused|unfocused)"'; then
     gui_usable=1
   elif echo "$show_status" | rg -q '"state":\s*"stopped"'; then
-    echo "检测到显示变量但窗口未拉起，按无 GUI 可用处理（可通过 AIDC_REQUIRE_GUI=1 强制失败）"
-    if [[ "${AIDC_REQUIRE_GUI:-0}" == "1" ]]; then
-      echo "命令链校验失败：AIDC_REQUIRE_GUI=1 且 show 后状态为 stopped" >&2
+    echo "检测到显示变量但窗口未拉起，按无 GUI 可用处理（可通过 AIPROTAL_REQUIRE_GUI=1 强制失败）"
+    if [[ "${AIPROTAL_REQUIRE_GUI:-0}" == "1" ]]; then
+      echo "命令链校验失败：AIPROTAL_REQUIRE_GUI=1 且 show 后状态为 stopped" >&2
       exit 1
     fi
   else

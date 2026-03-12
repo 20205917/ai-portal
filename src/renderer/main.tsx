@@ -51,7 +51,7 @@ class RendererErrorBoundary extends React.Component<{ children: ReactNode }, Ren
       return (
         <div className="loading-shell">
           <div className="loading-card">
-            <span className="eyebrow">ai-protal</span>
+            <span className="eyebrow">AIProtal</span>
             <h1>渲染层异常</h1>
             <p>{this.state.errorMessage}</p>
             <button type="button" className="primary-action" onClick={() => window.location.reload()}>

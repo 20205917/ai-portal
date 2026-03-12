@@ -1,5 +1,5 @@
-appId: io.ai-protal.app
-productName: ai-protal
+appId: io.AIProtal.app
+productName: AIProtal
 artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
 
 directories:

@@ -107,7 +107,7 @@ async function main() {
 
   try {
     const response = await sendCommand(socketPath, payload);
-    if (process.env.AIDC_TIMING_LOG === "1" && payload.command === "toggle") {
+    if (process.env.AIPROTAL_TIMING_LOG === "1" && payload.command === "toggle") {
       const timing = response?.diagnostics?.lastToggle;
       if (timing && timing.requestId === requestId) {
         console.error(
