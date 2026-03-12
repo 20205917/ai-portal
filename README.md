@@ -79,11 +79,14 @@ npx aidc status
 npm test
 npm run verify:gate
 AIDC_REQUIRE_GUI=1 npm run verify:gate
+npm run check:architecture
+AIDC_ARCH_FAIL_ON_WARN=1 npm run check:architecture
 npm run verify:visual
 ```
 
 `npm run verify:visual` 会在 `artifacts/visual/<timestamp>/` 输出截图与 `index.md`，用于人工确认界面状态。
 脚本会自动清理历史截图批次，默认仅保留最近 `5` 批；可用 `AIDC_VISUAL_KEEP=<N>` 调整保留数量。
+`npm run check:architecture` 默认采用“建议阈值 + 硬阈值”双层策略：建议阈值只告警不阻断，硬阈值才失败。若需要严格模式，可设置 `AIDC_ARCH_FAIL_ON_WARN=1` 将告警升级为失败。
 
 ## 图形渲染排障
 
