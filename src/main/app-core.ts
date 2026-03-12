@@ -105,6 +105,7 @@ export class AppCore {
     });
     this.shortcutManager = new ShortcutManager({
       isX11: this.options.hostEnvironment.sessionType.toLowerCase() === "x11",
+      platform: process.platform,
       onToggleWindow: () => this.toggleMainWindow(),
       onProviderNext: () => this.cycleProviderWithReveal("next"),
       onProviderPrev: () => this.cycleProviderWithReveal("prev")

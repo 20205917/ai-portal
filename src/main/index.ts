@@ -5,27 +5,22 @@ import { app, shell } from "electron";
 import { AppCore } from "./app-core";
 import { shouldDisableGpu, shouldEnableNoSandbox } from "./env";
 import { resolveSocketPath, resolveConfigDir } from "./paths";
+import { resolveHostEnvironment } from "./host-environment";
 import { APP_ID, APP_NAME } from "../shared/constants";
 import { parseAidcArgs } from "../shared/commands";
-import type { HostEnvironment } from "../shared/types";
 
-const configDir = resolveConfigDir();
-const socketPath = resolveSocketPath(configDir);
+const configDir = resolveConfigDir({ platform: process.platform, env: process.env });
+const socketPath = resolveSocketPath(configDir, { platform: process.platform, env: process.env });
 const iconPath = path.resolve(__dirname, "../../assets/icon.svg");
 const trayIconPath = path.resolve(__dirname, "../../assets/tray-icon.png");
 const rendererIndex = path.resolve(__dirname, "../renderer/index.html");
 const rendererUrl = process.env.AIDC_RENDERER_URL;
 const debugRenderer = process.env.AIDC_DEBUG === "1";
 const allowMultiInstance = process.env.AIDC_ALLOW_MULTI_INSTANCE === "1";
-const enableNoSandbox = shouldEnableNoSandbox(process.env);
+const enableNoSandbox = shouldEnableNoSandbox(process.env, process.platform);
 const enableDisableGpu = shouldDisableGpu(process.env);
 const initialCommand = parseAidcArgs(process.argv) ?? { command: "toggle" as const };
-const hostEnvironment: HostEnvironment = {
-  sessionType: process.env.XDG_SESSION_TYPE || "unknown",
-  desktopSession: process.env.DESKTOP_SESSION || "unknown",
-  currentDesktop: process.env.XDG_CURRENT_DESKTOP || "unknown",
-  summary: `本机环境：Ubuntu GNOME ${String(process.env.XDG_SESSION_TYPE || "unknown").toUpperCase()}`
-};
+const hostEnvironment = resolveHostEnvironment({ env: process.env, platform: process.platform });
 
 app.setName(APP_NAME);
 app.setPath("userData", configDir);

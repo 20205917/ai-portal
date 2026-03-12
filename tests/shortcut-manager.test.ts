@@ -45,6 +45,7 @@ describe("ShortcutManager", () => {
     const registrar = new FakeRegistrar();
     const manager = new ShortcutManager({
       isX11: false,
+      platform: "linux",
       registrar,
       onToggleWindow: async () => undefined,
       onProviderNext: async () => undefined,
@@ -62,6 +63,7 @@ describe("ShortcutManager", () => {
     const registrar = new FakeRegistrar();
     const manager = new ShortcutManager({
       isX11: false,
+      platform: "linux",
       registrar,
       onToggleWindow: async () => undefined,
       onProviderNext: async () => undefined,
@@ -81,6 +83,7 @@ describe("ShortcutManager", () => {
     registrar.setFail("Ctrl+Alt+Q");
     const manager = new ShortcutManager({
       isX11: true,
+      platform: "linux",
       registrar,
       onToggleWindow: async () => undefined,
       onProviderNext: async () => undefined,
@@ -98,6 +101,7 @@ describe("ShortcutManager", () => {
     registrar.setThrow("invalid");
     const manager = new ShortcutManager({
       isX11: false,
+      platform: "linux",
       registrar,
       onToggleWindow: async () => undefined,
       onProviderNext: async () => undefined,
@@ -108,5 +112,23 @@ describe("ShortcutManager", () => {
       toggleWindow: "invalid"
     }));
     expect(status.toggleWindow.state).toBe("invalid");
+  });
+
+  it("returns Windows guidance when shortcut conflicts", () => {
+    const registrar = new FakeRegistrar();
+    registrar.setFail("Ctrl+Alt+Q");
+    const manager = new ShortcutManager({
+      isX11: false,
+      platform: "win32",
+      registrar,
+      onToggleWindow: async () => undefined,
+      onProviderNext: async () => undefined,
+      onProviderPrev: async () => undefined
+    });
+
+    const status = manager.apply(settings());
+    expect(status.toggleWindow.state).toBe("conflict");
+    expect(status.toggleWindow.fallbackCommand).toBeUndefined();
+    expect(status.toggleWindow.message).toContain("Windows");
   });
 });

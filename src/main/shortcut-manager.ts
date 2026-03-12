@@ -9,6 +9,7 @@ import type {
 
 interface ShortcutManagerOptions {
   isX11: boolean;
+  platform: NodeJS.Platform;
   onToggleWindow: () => Promise<void>;
   onProviderNext: () => Promise<void>;
   onProviderPrev: () => Promise<void>;
@@ -103,6 +104,16 @@ function fallbackCommand(action: ShortcutAction, accelerator: string, isX11: boo
     return COMMAND_BY_ACTION[action];
   }
   return `./scripts/install-gnome-shortcut.sh "${NAME_BY_ACTION[action]}" "${binding}" "${COMMAND_BY_ACTION[action]}"`;
+}
+
+function conflictMessage(isX11: boolean, platform: NodeJS.Platform): string {
+  if (isX11) {
+    return "快捷键被系统或其他应用占用。";
+  }
+  if (platform === "win32") {
+    return "快捷键被系统或其他应用占用。请在 Windows 系统设置中调整冲突后重试。";
+  }
+  return "快捷键被系统或其他应用占用。请在系统快捷键设置中调整冲突后重试。";
 }
 
 function statusItem(
@@ -230,7 +241,7 @@ export class ShortcutManager {
           action,
           accelerator,
           "conflict",
-          "快捷键被系统或其他应用占用。",
+          conflictMessage(this.options.isX11, this.options.platform),
           fallbackCommand(action, accelerator, this.options.isX11)
         );
       } catch {

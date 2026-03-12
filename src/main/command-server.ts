@@ -5,8 +5,16 @@ import type {
   CommandPayload,
   CommandResponse
 } from "../shared/commands";
+import { isNamedPipeEndpoint } from "./paths";
 
 const MAX_MESSAGE_SIZE = 64 * 1024;
+
+type FsAdapter = Pick<typeof fs, "existsSync" | "unlinkSync" | "chmodSync">;
+
+interface CommandServerDependencies {
+  fsAdapter?: FsAdapter;
+  server?: net.Server;
+}
 
 function createErrorResponse(message: string): CommandResponse {
   return {
@@ -20,32 +28,42 @@ function createErrorResponse(message: string): CommandResponse {
 
 export class CommandServer {
   private readonly server: net.Server;
+  private readonly fsAdapter: FsAdapter;
 
   constructor(
     private readonly socketPath: string,
-    private readonly onCommand: (command: CommandPayload) => Promise<CommandResponse>
+    private readonly onCommand: (command: CommandPayload) => Promise<CommandResponse>,
+    dependencies: CommandServerDependencies = {}
   ) {
-    this.server = net.createServer(this.handleConnection.bind(this));
+    this.server = dependencies.server ?? net.createServer(this.handleConnection.bind(this));
+    this.fsAdapter = dependencies.fsAdapter ?? fs;
   }
 
   async listen(): Promise<void> {
-    if (fs.existsSync(this.socketPath)) {
-      fs.unlinkSync(this.socketPath);
-    }
+    this.cleanupSocketFile();
 
     await new Promise<void>((resolve, reject) => {
       this.server.once("error", reject);
       this.server.listen(this.socketPath, () => resolve());
     });
 
-    fs.chmodSync(this.socketPath, 0o600);
+    if (!isNamedPipeEndpoint(this.socketPath)) {
+      this.fsAdapter.chmodSync(this.socketPath, 0o600);
+    }
   }
 
   close(): void {
-    if (fs.existsSync(this.socketPath)) {
-      fs.unlinkSync(this.socketPath);
-    }
+    this.cleanupSocketFile();
     this.server.close();
+  }
+
+  private cleanupSocketFile(): void {
+    if (isNamedPipeEndpoint(this.socketPath)) {
+      return;
+    }
+    if (this.fsAdapter.existsSync(this.socketPath)) {
+      this.fsAdapter.unlinkSync(this.socketPath);
+    }
   }
 
   private handleConnection(socket: net.Socket): void {

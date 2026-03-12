@@ -3,7 +3,7 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { CommandServer } from "../src/main/command-server";
 import type { CommandPayload, CommandResponse } from "../src/shared/commands";
@@ -110,5 +110,61 @@ describe("CommandServer", () => {
     expect(response.ok).toBe(false);
     expect(response.error).toMatch(/empty command payload/i);
     expect(response.state).toBe("stopped");
+  });
+
+  it("manages socket file lifecycle for unix socket endpoints", async () => {
+    const fakeServer = {
+      once: vi.fn((_event: string, _handler: (error: Error) => void) => fakeServer),
+      listen: vi.fn((_path: string, callback: () => void) => {
+        callback();
+        return fakeServer;
+      }),
+      close: vi.fn(() => fakeServer)
+    } as unknown as net.Server;
+    const fsAdapter = {
+      existsSync: vi.fn(() => true),
+      unlinkSync: vi.fn(),
+      chmodSync: vi.fn()
+    };
+    const server = new CommandServer(
+      "/tmp/aidc.sock",
+      async () => ({ ok: true, ...makeRuntime() }),
+      { server: fakeServer, fsAdapter }
+    );
+
+    await server.listen();
+    server.close();
+
+    expect(fsAdapter.existsSync).toHaveBeenCalledTimes(2);
+    expect(fsAdapter.unlinkSync).toHaveBeenCalledTimes(2);
+    expect(fsAdapter.chmodSync).toHaveBeenCalledWith("/tmp/aidc.sock", 0o600);
+  });
+
+  it("skips socket file operations for windows named pipe endpoints", async () => {
+    const fakeServer = {
+      once: vi.fn((_event: string, _handler: (error: Error) => void) => fakeServer),
+      listen: vi.fn((_path: string, callback: () => void) => {
+        callback();
+        return fakeServer;
+      }),
+      close: vi.fn(() => fakeServer)
+    } as unknown as net.Server;
+    const fsAdapter = {
+      existsSync: vi.fn(() => true),
+      unlinkSync: vi.fn(),
+      chmodSync: vi.fn()
+    };
+    const server = new CommandServer(
+      "\\\\.\\pipe\\aidc-test",
+      async () => ({ ok: true, ...makeRuntime() }),
+      { server: fakeServer, fsAdapter }
+    );
+
+    await server.listen();
+    server.close();
+
+    expect(fsAdapter.existsSync).not.toHaveBeenCalled();
+    expect(fsAdapter.unlinkSync).not.toHaveBeenCalled();
+    expect(fsAdapter.chmodSync).not.toHaveBeenCalled();
   });
 });

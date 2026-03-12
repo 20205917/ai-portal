@@ -6,7 +6,7 @@ interface SidebarAutoHideState {
   onSidebarCollapse: () => void;
 }
 
-export function useSidebarAutoHide(enabled: boolean, delayMs = 260): SidebarAutoHideState {
+export function useSidebarAutoHide(enabled: boolean, delayMs = 360): SidebarAutoHideState {
   const [expanded, setExpanded] = useState(true);
   const collapseTimerRef = useRef<number | null>(null);
 

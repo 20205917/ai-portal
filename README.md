@@ -1,13 +1,13 @@
 # AIDispatchCenter
 
-Ubuntu 下的个人 AI 入口调度台。它提供一个与普通浏览器明确隔离的专用 AI 主窗口，并通过 `aidc toggle` 实现精准的拉起、隐藏和聚焦。
+面向 Linux / Windows 的个人 AI 入口调度台。它提供一个与普通浏览器明确隔离的专用 AI 主窗口，并通过 `aidc toggle` 实现精准的拉起、隐藏和聚焦。
 
 ## 当前实现
 
-- Electron + TypeScript 桌面壳，当前默认适配环境为本机 `Ubuntu GNOME X11 (ubuntu-xorg)`
+- Electron + TypeScript 桌面壳，核心能力覆盖 Linux / Windows（Linux 保留 GNOME/X11 优先策略）
 - React + Vite 渲染层，左侧使用可管理的 Dock 风格图标栏，右侧内容区使用单实例内嵌 `webview`
 - 默认内置 `ChatGPT` 与 `豆包`
-- 单实例主进程 + Unix socket 命令面：`aidc toggle`、`aidc show`、`aidc hide`、`aidc open <providerId>`、`aidc status`、`aidc next`、`aidc prev`
+- 单实例主进程 + 本地 IPC 命令面（Linux Unix socket / Windows named pipe）：`aidc toggle`、`aidc show`、`aidc hide`、`aidc open <providerId>`、`aidc status`、`aidc next`、`aidc prev`
 - `aidc status` 会返回最近一次 `toggle` 的时延摘要，便于排查“拉起慢”发生在 CLI 侧还是窗口侧
 - provider 级 `isolated-external` 回退模式，避免与普通浏览器混淆
 

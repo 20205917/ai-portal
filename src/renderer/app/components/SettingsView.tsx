@@ -179,7 +179,7 @@ export function SettingsView(props: SettingsViewProps) {
             </InfoTip>
           </div>
           <label className="toggle-row">
-            <span>侧栏自动隐藏（X11 优先策略）</span>
+            <span>侧栏自动隐藏</span>
             <input
               type="checkbox"
               checked={uiSettings.sidebarAutoHide}

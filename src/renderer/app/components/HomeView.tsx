@@ -220,6 +220,11 @@ export function HomeView(props: HomeViewProps) {
                   </div>
                 </div>
                 <div className="manage-actions">
+                  {provider.removable ? (
+                    <button type="button" className="danger-action" onClick={() => void onRemoveProvider(provider)}>
+                      删除
+                    </button>
+                  ) : null}
                   <button type="button" onClick={() => void onToggleProviderVisibility(provider)}>
                     {provider.enabled ? "隐藏" : "显示"}
                   </button>
@@ -240,11 +245,6 @@ export function HomeView(props: HomeViewProps) {
                       不支持回退
                     </button>
                   )}
-                  {provider.removable ? (
-                    <button type="button" className="danger-action" onClick={() => void onRemoveProvider(provider)}>
-                      删除
-                    </button>
-                  ) : null}
                 </div>
               </div>
             ))}
