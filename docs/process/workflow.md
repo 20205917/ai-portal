@@ -100,7 +100,7 @@ AIDC_REQUIRE_GUI=1 npm run verify:gate
 
 - 每任务自动提交
 - 分支建议：`task/<yyyymmdd>-<slug>`
-- 提交信息：`type(scope): summary`
+- 提交信息：`type(scope): summary`必须使用中文
 - 提交正文固定包含：`Root cause`、`Changes`、`Verification`、`Impact`
 - 自动提交脚本：`scripts/task-auto-commit.sh`
 

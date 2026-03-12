@@ -490,8 +490,15 @@ code {
 .home-status-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
+}
+
+.panel-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .home-panel h2 {
@@ -500,6 +507,11 @@ code {
 
 .home-panel h3 {
   margin: 0 0 8px;
+}
+
+.panel-title-row h2,
+.panel-title-row h3 {
+  margin: 0;
 }
 
 .home-panel p,
@@ -671,6 +683,82 @@ code {
   color: #f8fafc;
   border-color: rgba(52, 211, 153, 0.38);
   background: rgba(52, 211, 153, 0.14);
+}
+
+.info-tip {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.info-tip-trigger {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: help;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  transition: 140ms ease;
+}
+
+.info-tip-trigger:hover,
+.info-tip-trigger:focus-visible {
+  border-color: rgba(148, 163, 184, 0.56);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+  outline: none;
+}
+
+.info-tip-content {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1300;
+  width: max-content;
+  max-width: min(360px, calc(100vw - 56px));
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(6, 14, 18, 0.96);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.info-tip:hover .info-tip-content,
+.info-tip:focus-within .info-tip-content {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.info-tip-list {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.info-tip-list li {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.info-tip-list code {
+  font-size: 12px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 1px 4px;
+  border-radius: 6px;
 }
 
 .settings-error {
@@ -916,6 +1004,12 @@ code {
   .home-status-header {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .info-tip-content {
+    right: 0;
+    left: auto;
+    width: min(320px, calc(100vw - 56px));
   }
 
   .hotkey-row {

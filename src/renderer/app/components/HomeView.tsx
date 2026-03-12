@@ -7,6 +7,7 @@ import type {
   UiSettings
 } from "../../../shared/types";
 import { glyphFor, hostLabel, providerIconStyle } from "../provider-visual";
+import { InfoTip } from "./InfoTip";
 
 interface HomeViewProps {
   providers: ProviderDefinition[];
@@ -60,9 +61,13 @@ export function HomeView(props: HomeViewProps) {
     <section className="home-shell">
       <section className="home-panel panel home-status-panel">
         <div className="home-status-header">
-          <div>
+          <div className="panel-title-row">
             <h2>AI 调度台首页</h2>
-            <p>当前状态与关键策略一屏可见，支持快速切换入口。</p>
+            <InfoTip label="查看首页说明">
+              <ul className="info-tip-list">
+                <li>当前状态与关键策略一屏可见，支持快速切换入口。</li>
+              </ul>
+            </InfoTip>
           </div>
           <button type="button" className="primary-action" onClick={onOpenSettings}>
             打开设置
@@ -93,8 +98,14 @@ export function HomeView(props: HomeViewProps) {
       </section>
 
       <section className="home-panel panel">
-        <h3>快速打开</h3>
-        <p>从这里打开常用 AI，也可以直观看到每个入口的当前模式。</p>
+        <div className="panel-title-row">
+          <h3>快速打开</h3>
+          <InfoTip label="查看快速打开说明">
+            <ul className="info-tip-list">
+              <li>从这里打开常用 AI，也可以直观看到每个入口的当前模式。</li>
+            </ul>
+          </InfoTip>
+        </div>
         <div className="home-grid">
           {visibleProviders.map((provider) => (
             <button
@@ -139,7 +150,6 @@ export function HomeView(props: HomeViewProps) {
                   </span>
                   <div>
                     <strong>{provider.label}</strong>
-                    <small>{provider.enabled ? "已显示在左侧栏" : "已从左侧栏隐藏"}</small>
                   </div>
                 </div>
                 <div className="manage-actions">
@@ -158,8 +168,14 @@ export function HomeView(props: HomeViewProps) {
         </article>
 
         <article className="panel">
-          <h3>添加 AI 网页</h3>
-          <p>图标会优先抓取网站 favicon，失败时自动回退为字母图标。</p>
+          <div className="panel-title-row">
+            <h3>添加 AI 网页</h3>
+            <InfoTip label="查看添加 AI 网页说明">
+              <ul className="info-tip-list">
+                <li>图标会优先抓取网站 favicon，失败时自动回退为字母图标。</li>
+              </ul>
+            </InfoTip>
+          </div>
           <form className="home-form" onSubmit={(event) => void onCreateProvider(event)}>
             <label className="field">
               <span>名称</span>

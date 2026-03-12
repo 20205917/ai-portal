@@ -9,6 +9,7 @@ import type {
   UiSettings,
   UiSettingsPatch
 } from "../../../shared/types";
+import { InfoTip } from "./InfoTip";
 
 interface SettingsViewProps {
   providers: ProviderDefinition[];
@@ -144,8 +145,16 @@ export function SettingsView(props: SettingsViewProps) {
     <section className="settings-shell">
       <section className="settings-grid">
         <article className="panel">
-          <h3>性能与保活</h3>
-          <p>控制 webview 缓存上限，平衡切换速度与内存占用。</p>
+          <div className="panel-title-row">
+            <h3>性能与保活</h3>
+            <InfoTip label="查看性能与保活说明">
+              <ul className="info-tip-list">
+                <li>控制 webview 缓存上限，平衡切换速度与内存占用。</li>
+                <li>{UI_KEEP_ALIVE_MIN} 表示最省内存，{UI_KEEP_ALIVE_MAX} 表示切换更快。</li>
+                <li>开启后响应更快，但会持续占用内存；关闭后点击关闭按钮将直接退出。</li>
+              </ul>
+            </InfoTip>
+          </div>
           <label className="range-field">
             <span>保活数量：{uiSettings.keepAliveLimit}</span>
             <input
@@ -156,7 +165,6 @@ export function SettingsView(props: SettingsViewProps) {
               value={uiSettings.keepAliveLimit}
               onChange={setKeepAlive}
             />
-            <small>{UI_KEEP_ALIVE_MIN} 表示最省内存，{UI_KEEP_ALIVE_MAX} 表示切换更快。</small>
           </label>
           <label className="toggle-row">
             <span>后台常驻（关闭窗口仅隐藏）</span>
@@ -166,12 +174,17 @@ export function SettingsView(props: SettingsViewProps) {
               onChange={(event) => void onUpdateUiSettings({ backgroundResident: event.target.checked })}
             />
           </label>
-          <small>开启后响应更快，但会持续占用内存；关闭后点击关闭按钮将直接退出。</small>
         </article>
 
         <article className="panel">
-          <h3>窗口与侧栏</h3>
-          <p>侧栏自动隐藏只在工作区生效，首页和设置页保持固定显示。</p>
+          <div className="panel-title-row">
+            <h3>窗口与侧栏</h3>
+            <InfoTip label="查看窗口与侧栏说明">
+              <ul className="info-tip-list">
+                <li>侧栏自动隐藏只在工作区生效，首页和设置页保持固定显示。</li>
+              </ul>
+            </InfoTip>
+          </div>
           <label className="toggle-row">
             <span>侧栏自动隐藏（X11 优先策略）</span>
             <input
@@ -202,8 +215,14 @@ export function SettingsView(props: SettingsViewProps) {
         </article>
 
         <article className="panel">
-          <h3>加载与兼容</h3>
-          <p>优先保证首帧稳定反馈，必要时可自动回退独立窗口。</p>
+          <div className="panel-title-row">
+            <h3>加载与兼容</h3>
+            <InfoTip label="查看加载与兼容说明">
+              <ul className="info-tip-list">
+                <li>优先保证首帧稳定反馈，必要时可自动回退独立窗口。</li>
+              </ul>
+            </InfoTip>
+          </div>
           <div className="mode-group">
             <span>加载策略</span>
             <div className="segment-control">
@@ -234,9 +253,15 @@ export function SettingsView(props: SettingsViewProps) {
         </article>
 
         <article className="panel settings-wide">
-          <h3>快捷键</h3>
-          <p>默认 `Ctrl+Alt+Q`，`Ctrl+Alt+Tab` 与系统冲突概率高，不建议使用。</p>
-          <p>请勿将系统快捷键绑定为 `npx aidc ...`，该路径会引入秒级启动开销。</p>
+          <div className="panel-title-row">
+            <h3>快捷键</h3>
+            <InfoTip label="查看快捷键说明">
+              <ul className="info-tip-list">
+                <li>默认 <code>Ctrl+Alt+Q</code>，<code>Ctrl+Alt+Tab</code> 与系统冲突概率高，不建议使用。</li>
+                <li>请勿将系统快捷键绑定为 <code>npx aidc ...</code>，该路径会引入秒级启动开销。</li>
+              </ul>
+            </InfoTip>
+          </div>
           <div className="hotkey-list">
             {hotkeyActions.map((item) => {
               const currentValue = hotkeyValue(uiSettings, item.action) ?? "";
@@ -285,8 +310,14 @@ export function SettingsView(props: SettingsViewProps) {
         </article>
 
         <article className="panel settings-wide">
-          <h3>服务模式</h3>
-          <p>默认使用内嵌模式；如果某个站点兼容性不稳定，可以切到独立回退窗。</p>
+          <div className="panel-title-row">
+            <h3>服务模式</h3>
+            <InfoTip label="查看服务模式说明">
+              <ul className="info-tip-list">
+                <li>默认使用内嵌模式；如果某个站点兼容性不稳定，可以切到独立回退窗。</li>
+              </ul>
+            </InfoTip>
+          </div>
           <div className="settings-list">
             {providers.map((provider) => {
               const canFallback = provider.fallbackMode === "isolated-external";
