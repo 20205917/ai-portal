@@ -33,8 +33,10 @@ import type {
   RuntimeSnapshot,
   RuntimeState,
   ShortcutStatus,
+  SystemMetricsSnapshot,
   UiSettingsPatch
 } from "../shared/types";
+import { aggregateSystemMetrics } from "./system-metrics";
 
 interface AppCoreOptions {
   configDir: string;
@@ -118,6 +120,7 @@ export class AppCore {
       getEnvironment: () => this.options.hostEnvironment,
       getUiSettings: () => this.getSettings().ui,
       getShortcutStatus: () => this.shortcutStatus,
+      getSystemMetrics: () => this.getSystemMetrics(),
       selectProvider: this.selectProvider.bind(this),
       updateUiSettings: this.updateUiSettings.bind(this),
       setProviderEngine: this.setProviderEngine.bind(this),
@@ -305,6 +308,18 @@ export class AppCore {
       return;
     }
     broadcastShortcutStatus(window, this.shortcutStatus);
+  }
+
+  private getSystemMetrics(): SystemMetricsSnapshot {
+    try {
+      return aggregateSystemMetrics(app.getAppMetrics());
+    } catch {
+      return {
+        cpuPercent: 0,
+        memoryMb: 0,
+        updatedAt: new Date().toISOString()
+      };
+    }
   }
 
   private async setProviderEngine(providerId: string, engine: ProviderDefinition["engine"]): Promise<void> {

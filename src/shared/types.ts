@@ -50,6 +50,12 @@ export interface RuntimeSnapshot {
   updatedAt: string;
 }
 
+export interface SystemMetricsSnapshot {
+  cpuPercent: number;
+  memoryMb: number;
+  updatedAt: string;
+}
+
 export interface HostEnvironment {
   sessionType: string;
   desktopSession: string;

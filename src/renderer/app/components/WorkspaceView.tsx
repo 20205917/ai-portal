@@ -15,6 +15,7 @@ interface WorkspaceViewProps {
   webviewError: string;
   bindWebviewNode: (element: Element | null) => void;
   onRetryEmbeddedPage: () => void;
+  onEmbeddedCacheChanged: (providerIds: string[]) => void;
 }
 
 export function WorkspaceView(props: WorkspaceViewProps) {
@@ -28,7 +29,8 @@ export function WorkspaceView(props: WorkspaceViewProps) {
     webviewState,
     webviewError,
     bindWebviewNode,
-    onRetryEmbeddedPage
+    onRetryEmbeddedPage,
+    onEmbeddedCacheChanged
   } = props;
   const activeEmbeddedProviderId = activeEmbeddedProvider?.id ?? null;
   const [retainedEmbeddedProviderIds, setRetainedEmbeddedProviderIds] = useState<string[]>([]);
@@ -75,6 +77,10 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       : webviewState === "loading" || webviewState === "idle")
   );
   const hideActiveWebviewForLoading = loadingOverlayMode === "immediate" && shouldShowLoadingOverlay;
+
+  useEffect(() => {
+    onEmbeddedCacheChanged(mountedEmbeddedProviders.map((provider) => provider.id));
+  }, [mountedEmbeddedProviders, onEmbeddedCacheChanged]);
 
   return (
     <section className={`workspace-content workspace-content-full ${visible ? "" : "is-hidden"}`}>

@@ -4,6 +4,7 @@ import type {
   NewProviderInput,
   ProviderDefinition,
   RuntimeSnapshot,
+  SystemMetricsSnapshot,
   UiSettings
 } from "../../../shared/types";
 import { glyphFor, hostLabel, providerIconStyle } from "../provider-visual";
@@ -15,6 +16,8 @@ interface HomeViewProps {
   activeProvider: ProviderDefinition;
   runtime: RuntimeSnapshot;
   uiSettings: UiSettings;
+  systemMetrics: SystemMetricsSnapshot;
+  cachedEmbeddedProviderIds: string[];
   form: NewProviderInput;
   formBusy: boolean;
   formError: string;
@@ -23,6 +26,7 @@ interface HomeViewProps {
   onOpenSettings: () => void;
   onToggleProviderVisibility: (provider: ProviderDefinition) => Promise<void>;
   onRemoveProvider: (provider: ProviderDefinition) => Promise<void>;
+  onSetProviderEngine: (providerId: string, engine: ProviderDefinition["engine"]) => Promise<void>;
   onCreateProvider: (event: FormEvent<HTMLFormElement>) => Promise<void>;
 }
 
@@ -39,6 +43,10 @@ function runtimeLabel(runtime: RuntimeSnapshot["state"]): string {
   return "未启动";
 }
 
+function providerEngineLabel(engine: ProviderDefinition["engine"]): string {
+  return engine === "embedded" ? "内嵌模式" : "独立回退窗";
+}
+
 export function HomeView(props: HomeViewProps) {
   const {
     providers,
@@ -46,6 +54,8 @@ export function HomeView(props: HomeViewProps) {
     activeProvider,
     runtime,
     uiSettings,
+    systemMetrics,
+    cachedEmbeddedProviderIds,
     form,
     formBusy,
     formError,
@@ -54,8 +64,13 @@ export function HomeView(props: HomeViewProps) {
     onOpenSettings,
     onToggleProviderVisibility,
     onRemoveProvider,
+    onSetProviderEngine,
     onCreateProvider
   } = props;
+
+  const cachedEmbeddedProviders = cachedEmbeddedProviderIds
+    .map((providerId) => providers.find((provider) => provider.id === providerId))
+    .filter((provider): provider is ProviderDefinition => Boolean(provider));
 
   return (
     <section className="home-shell">
@@ -75,16 +90,38 @@ export function HomeView(props: HomeViewProps) {
         </div>
         <div className="status-grid">
           <article className="status-card">
-            <span>当前活跃服务</span>
-            <strong>{activeProvider.label}</strong>
+            <span>CPU</span>
+            <strong>{systemMetrics.cpuPercent.toFixed(1)}%</strong>
+          </article>
+          <article className="status-card">
+            <span>内存</span>
+            <strong>{systemMetrics.memoryMb.toFixed(1)} MB</strong>
+          </article>
+          <article className="status-card">
+            <span className="status-label-row">
+              <span>缓存服务</span>
+              <InfoTip label="查看缓存服务详情">
+                <ul className="info-tip-list">
+                  <li>当前缓存：{cachedEmbeddedProviders.length} / {uiSettings.keepAliveLimit}</li>
+                  {cachedEmbeddedProviders.length > 0 ? (
+                    cachedEmbeddedProviders.map((provider) => (
+                      <li key={provider.id}>{provider.label}</li>
+                    ))
+                  ) : (
+                    <li>当前没有缓存中的内嵌服务。</li>
+                  )}
+                </ul>
+              </InfoTip>
+            </span>
+            <strong>{cachedEmbeddedProviders.length} / {uiSettings.keepAliveLimit}</strong>
           </article>
           <article className="status-card">
             <span>窗口状态</span>
             <strong>{runtimeLabel(runtime.state)}</strong>
           </article>
           <article className="status-card">
-            <span>保活数量</span>
-            <strong>{uiSettings.keepAliveLimit}</strong>
+            <span>当前活跃服务</span>
+            <strong>{activeProvider.label}</strong>
           </article>
           <article className="status-card">
             <span>加载策略</span>
@@ -93,6 +130,10 @@ export function HomeView(props: HomeViewProps) {
           <article className="status-card">
             <span>侧栏自动隐藏</span>
             <strong>{uiSettings.sidebarAutoHide ? "已开启" : "已关闭"}</strong>
+          </article>
+          <article className="status-card">
+            <span>后台常驻</span>
+            <strong>{uiSettings.backgroundResident ? "已开启" : "已关闭"}</strong>
           </article>
         </div>
       </section>
@@ -136,7 +177,7 @@ export function HomeView(props: HomeViewProps) {
 
       <section className="home-split">
         <article className="panel">
-          <h3>左侧栏管理</h3>
+          <h3>左侧栏与服务模式</h3>
           <div className="manage-list">
             {providers.map((provider) => (
               <div className="manage-row" key={provider.id}>
@@ -150,12 +191,30 @@ export function HomeView(props: HomeViewProps) {
                   </span>
                   <div>
                     <strong>{provider.label}</strong>
+                    <small className="manage-mode-tag">{providerEngineLabel(provider.engine)}</small>
                   </div>
                 </div>
                 <div className="manage-actions">
                   <button type="button" onClick={() => void onToggleProviderVisibility(provider)}>
                     {provider.enabled ? "隐藏" : "显示"}
                   </button>
+                  {provider.fallbackMode === "isolated-external" ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        void onSetProviderEngine(
+                          provider.id,
+                          provider.engine === "embedded" ? "isolated-external" : "embedded"
+                        )
+                      }
+                    >
+                      {provider.engine === "embedded" ? "切到独立窗口" : "恢复内嵌模式"}
+                    </button>
+                  ) : (
+                    <button type="button" disabled>
+                      不支持回退
+                    </button>
+                  )}
                   {provider.removable ? (
                     <button type="button" className="danger-action" onClick={() => void onRemoveProvider(provider)}>
                       删除

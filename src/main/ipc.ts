@@ -8,6 +8,7 @@ import type {
   ProviderDefinition,
   RuntimeSnapshot,
   ShortcutStatus,
+  SystemMetricsSnapshot,
   UiSettings,
   UiSettingsPatch
 } from "../shared/types";
@@ -21,6 +22,7 @@ interface IpcContext {
   getEnvironment: () => HostEnvironment;
   getUiSettings: () => UiSettings;
   getShortcutStatus: () => ShortcutStatus;
+  getSystemMetrics: () => SystemMetricsSnapshot;
   selectProvider: (providerId: string) => Promise<void>;
   updateUiSettings: (patch: UiSettingsPatch) => Promise<void>;
   setProviderEngine: (providerId: string, engine: ProviderDefinition["engine"]) => Promise<void>;
@@ -77,6 +79,8 @@ export function registerIpc(context: IpcContext): void {
   ipcMain.handle("app:open-external-provider", async (_event, providerId: string) => {
     await context.openExternalProvider(providerId);
   });
+
+  ipcMain.handle("app:get-system-metrics", () => context.getSystemMetrics());
 
 }
 

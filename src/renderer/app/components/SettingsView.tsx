@@ -2,7 +2,6 @@ import { useState, type ChangeEvent } from "react";
 
 import { UI_KEEP_ALIVE_MAX, UI_KEEP_ALIVE_MIN } from "../../../shared/constants";
 import type {
-  ProviderDefinition,
   ShortcutAction,
   ShortcutStatus,
   ShortcutStatusItem,
@@ -12,13 +11,10 @@ import type {
 import { InfoTip } from "./InfoTip";
 
 interface SettingsViewProps {
-  providers: ProviderDefinition[];
   uiSettings: UiSettings;
   shortcutStatus: ShortcutStatus;
   settingsError: string;
-  engineLabels: Record<ProviderDefinition["engine"], string>;
   onUpdateUiSettings: (patch: UiSettingsPatch) => Promise<void>;
-  onSetProviderEngine: (providerId: string, engine: ProviderDefinition["engine"]) => Promise<void>;
 }
 
 interface HotkeyActionSpec {
@@ -83,13 +79,10 @@ function hotkeyValue(settings: UiSettings, action: ShortcutAction): string | nul
 
 export function SettingsView(props: SettingsViewProps) {
   const {
-    providers,
     uiSettings,
     shortcutStatus,
     settingsError,
-    engineLabels,
-    onUpdateUiSettings,
-    onSetProviderEngine
+    onUpdateUiSettings
   } = props;
   const [clipboardMessage, setClipboardMessage] = useState("");
 
@@ -252,6 +245,11 @@ export function SettingsView(props: SettingsViewProps) {
           </label>
         </article>
 
+        <article className="panel settings-placeholder">
+          <h3>更多设置</h3>
+          <small>此区域预留后续扩展功能。</small>
+        </article>
+
         <article className="panel settings-wide">
           <div className="panel-title-row">
             <h3>快捷键</h3>
@@ -308,48 +306,8 @@ export function SettingsView(props: SettingsViewProps) {
           </div>
           {clipboardMessage ? <p className="form-error settings-error">{clipboardMessage}</p> : null}
         </article>
-
-        <article className="panel settings-wide">
-          <div className="panel-title-row">
-            <h3>服务模式</h3>
-            <InfoTip label="查看服务模式说明">
-              <ul className="info-tip-list">
-                <li>默认使用内嵌模式；如果某个站点兼容性不稳定，可以切到独立回退窗。</li>
-              </ul>
-            </InfoTip>
-          </div>
-          <div className="settings-list">
-            {providers.map((provider) => {
-              const canFallback = provider.fallbackMode === "isolated-external";
-              const targetMode = provider.engine === "embedded" ? "isolated-external" : "embedded";
-
-              return (
-                <div className="provider-setting" key={provider.id}>
-                  <div>
-                    <strong>{provider.label}</strong>
-                    <small>{engineLabels[provider.engine]}</small>
-                  </div>
-                  <div className="provider-setting-actions">
-                    {canFallback ? (
-                      <button
-                        type="button"
-                        onClick={() => void onSetProviderEngine(provider.id, targetMode)}
-                      >
-                        {provider.engine === "embedded" ? "切到独立窗口" : "恢复内嵌模式"}
-                      </button>
-                    ) : (
-                      <button type="button" disabled>
-                        不支持回退
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {settingsError ? <p className="form-error settings-error">{settingsError}</p> : null}
-        </article>
       </section>
+      {settingsError ? <p className="form-error settings-error">{settingsError}</p> : null}
     </section>
   );
 }

@@ -6,6 +6,7 @@ import type {
   ProviderDefinition,
   RuntimeSnapshot,
   ShortcutStatus,
+  SystemMetricsSnapshot,
   UiSettings,
   UiSettingsPatch
 } from "../shared/types";
@@ -25,6 +26,7 @@ contextBridge.exposeInMainWorld("aidc", {
     ipcRenderer.invoke("app:remove-provider", providerId),
   openExternalProvider: (providerId: string): Promise<void> =>
     ipcRenderer.invoke("app:open-external-provider", providerId),
+  getSystemMetrics: (): Promise<SystemMetricsSnapshot> => ipcRenderer.invoke("app:get-system-metrics"),
   onProvidersUpdated: (listener: (payload: { providers: ProviderDefinition[]; activeProviderId: string }) => void) => {
     const subscription = (_event: unknown, payload: { providers: ProviderDefinition[]; activeProviderId: string }) =>
       listener(payload);

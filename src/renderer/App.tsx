@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { NewProviderInput, ProviderDefinition, RuntimeSnapshot, UiSettingsPatch } from "../shared/types";
 import { FatalView, LoadingView } from "./app/components/BootViews";
 import { HomeView } from "./app/components/HomeView";
@@ -8,6 +8,7 @@ import { WorkspaceView } from "./app/components/WorkspaceView";
 import { useEmbeddedAutoFallback } from "./app/hooks/useEmbeddedAutoFallback";
 import { useBootstrapState } from "./app/hooks/useBootstrapState";
 import { useSidebarAutoHide } from "./app/hooks/useSidebarAutoHide";
+import { useSystemMetrics } from "./app/hooks/useSystemMetrics";
 import { useWebviewLifecycle } from "./app/hooks/useWebviewLifecycle";
 import type { View } from "./app/types";
 
@@ -16,11 +17,6 @@ const runtimeLabels: Record<RuntimeSnapshot["state"], string> = {
   hidden: "已隐藏",
   "visible-unfocused": "后台可见",
   "visible-focused": "前台显示"
-};
-
-const engineLabels: Record<ProviderDefinition["engine"], string> = {
-  embedded: "内嵌模式",
-  "isolated-external": "独立回退窗"
 };
 
 const emptyForm: NewProviderInput = {
@@ -35,6 +31,7 @@ export function App() {
   const [formError, setFormError] = useState("");
   const [formBusy, setFormBusy] = useState(false);
   const [settingsError, setSettingsError] = useState("");
+  const [cachedEmbeddedProviderIds, setCachedEmbeddedProviderIds] = useState<string[]>([]);
   const startupViewAppliedRef = useRef(false);
   const {
     loading,
@@ -55,6 +52,7 @@ export function App() {
     [visibleProviders]
   );
   const sidebarAutoHideActive = uiSettings.sidebarAutoHide && view === "workspace";
+  const systemMetrics = useSystemMetrics(2000);
   const activeEmbeddedProvider =
     view === "workspace" && activeProvider?.engine === "embedded" ? activeProvider : null;
   const {
@@ -77,6 +75,18 @@ export function App() {
     setView(bootstrap.settings?.ui?.startupView ?? "workspace");
   }, [bootstrap]);
   useEmbeddedAutoFallback(uiSettings.autoFallbackOnEmbedError, webviewState, activeEmbeddedProvider);
+
+  const onEmbeddedCacheChanged = useCallback((providerIds: string[]) => {
+    setCachedEmbeddedProviderIds((current) => {
+      if (
+        current.length === providerIds.length
+        && current.every((providerId, index) => providerId === providerIds[index])
+      ) {
+        return current;
+      }
+      return providerIds;
+    });
+  }, []);
 
   async function updateUiSettings(patch: UiSettingsPatch): Promise<void> {
     setSettingsError("");
@@ -113,6 +123,15 @@ export function App() {
       }
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "删除失败。");
+    }
+  }
+
+  async function setProviderEngine(providerId: string, engine: ProviderDefinition["engine"]) {
+    setFormError("");
+    try {
+      await window.aidc.setProviderEngine(providerId, engine);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "切换模式失败。");
     }
   }
 
@@ -177,6 +196,8 @@ export function App() {
               activeProvider={activeProvider}
               runtime={runtime}
               uiSettings={uiSettings}
+              systemMetrics={systemMetrics}
+              cachedEmbeddedProviderIds={cachedEmbeddedProviderIds}
               form={form}
               formBusy={formBusy}
               formError={formError}
@@ -185,19 +206,17 @@ export function App() {
               onOpenSettings={() => setView("settings")}
               onToggleProviderVisibility={toggleProviderVisibility}
               onRemoveProvider={removeProvider}
+              onSetProviderEngine={setProviderEngine}
               onCreateProvider={handleCreateProvider}
             />
           ) : null}
 
           {view === "settings" ? (
             <SettingsView
-              providers={providers}
               uiSettings={uiSettings}
               shortcutStatus={shortcutStatus}
               settingsError={settingsError}
-              engineLabels={engineLabels}
               onUpdateUiSettings={updateUiSettings}
-              onSetProviderEngine={(providerId, engine) => window.aidc.setProviderEngine(providerId, engine)}
             />
           ) : null}
 
@@ -212,6 +231,7 @@ export function App() {
             webviewError={webviewError}
             bindWebviewNode={bindWebviewNode}
             onRetryEmbeddedPage={retryEmbeddedPage}
+            onEmbeddedCacheChanged={onEmbeddedCacheChanged}
           />
         </main>
       </div>

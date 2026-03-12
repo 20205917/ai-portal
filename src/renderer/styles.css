@@ -530,12 +530,12 @@ code {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 10px;
-  margin-top: 14px;
+  margin-top: 10px;
 }
 
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -543,6 +543,7 @@ code {
   display: grid;
   gap: 6px;
   padding: 12px;
+  min-height: 82px;
   border-radius: 14px;
   border: 1px solid rgba(148, 163, 184, 0.14);
   background: rgba(255, 255, 255, 0.02);
@@ -553,6 +554,18 @@ code {
   color: var(--muted);
 }
 
+.status-label-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-label-row .info-tip-trigger {
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+}
+
 .status-card strong {
   font-size: 15px;
 }
@@ -561,7 +574,8 @@ code {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px;
+  padding: 12px;
+  min-height: 78px;
   border-radius: 16px;
   color: inherit;
   cursor: pointer;
@@ -610,6 +624,10 @@ code {
   gap: 12px;
 }
 
+.home-split {
+  grid-template-columns: minmax(0, 1.62fr) minmax(0, 1fr);
+}
+
 .settings-wide {
   grid-column: 1 / -1;
 }
@@ -625,6 +643,21 @@ code {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.settings-placeholder {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  border-style: dashed;
+}
+
+.settings-placeholder h3 {
+  margin: 0;
+}
+
+.settings-placeholder small {
+  color: var(--muted);
 }
 
 .range-field,
@@ -881,10 +914,11 @@ code {
 .manage-row,
 .provider-setting {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 0;
+  min-height: 56px;
+  padding: 10px 0;
   border-bottom: 1px solid rgba(148, 163, 184, 0.08);
 }
 
@@ -898,11 +932,23 @@ code {
   align-items: center;
 }
 
+.manage-mode-tag {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 2px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(148, 163, 184, 0.08);
+}
+
 .manage-actions,
 .provider-setting-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   flex-shrink: 0;
 }
 
@@ -999,6 +1045,10 @@ code {
   .home-split,
   .settings-grid {
     grid-template-columns: 1fr;
+  }
+
+  .status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .home-status-header {
