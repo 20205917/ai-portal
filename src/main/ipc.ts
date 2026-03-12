@@ -30,6 +30,7 @@ interface IpcContext {
   createProvider: (input: NewProviderInput) => Promise<void>;
   removeProvider: (providerId: string) => Promise<void>;
   openExternalProvider: (providerId: string) => Promise<void>;
+  hideWindow: () => Promise<void>;
 }
 
 export function registerIpc(context: IpcContext): void {
@@ -80,8 +81,11 @@ export function registerIpc(context: IpcContext): void {
     await context.openExternalProvider(providerId);
   });
 
-  ipcMain.handle("app:get-system-metrics", () => context.getSystemMetrics());
+  ipcMain.handle("app:hide-window", async () => {
+    await context.hideWindow();
+  });
 
+  ipcMain.handle("app:get-system-metrics", () => context.getSystemMetrics());
 }
 
 export function broadcastProviders(window: BrowserWindow, providers: ProviderDefinition[], activeProviderId: string): void {

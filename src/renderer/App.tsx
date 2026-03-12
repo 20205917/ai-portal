@@ -104,6 +104,10 @@ export function App() {
     await window.aidc.selectProvider(providerId);
   }
 
+  async function hideWindow(): Promise<void> {
+    await window.aidc.hideWindow();
+  }
+
   async function toggleProviderVisibility(provider: ProviderDefinition) {
     try {
       await window.aidc.setProviderEnabled(provider.id, !provider.enabled);
@@ -204,6 +208,7 @@ export function App() {
               setForm={setForm}
               onOpenProvider={openProvider}
               onOpenSettings={() => setView("settings")}
+              onHideWindow={hideWindow}
               onToggleProviderVisibility={toggleProviderVisibility}
               onRemoveProvider={removeProvider}
               onSetProviderEngine={setProviderEngine}

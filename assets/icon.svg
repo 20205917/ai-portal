@@ -1,15 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title">
-  <title>AIProtal</title>
+  <title>AIProtal Closed Portal Ring</title>
   <defs>
-    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
-      <stop offset="0%" stop-color="#111827" />
-      <stop offset="100%" stop-color="#0f766e" />
+    <linearGradient id="bg" x1="24" x2="232" y1="20" y2="236" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#081317" />
+      <stop offset="1" stop-color="#10313a" />
     </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(128 128) rotate(90) scale(96)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#38f2c8" stop-opacity="0.28" />
+      <stop offset="1" stop-color="#38f2c8" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="outerRing" x1="64" x2="192" y1="64" y2="192" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#e6fff6" />
+      <stop offset="1" stop-color="#b8ffea" />
+    </linearGradient>
+    <linearGradient id="innerRing" x1="78" x2="182" y1="78" y2="182" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5af2d1" />
+      <stop offset="1" stop-color="#14b8a6" />
+    </linearGradient>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
   </defs>
-  <rect width="256" height="256" rx="48" fill="url(#bg)" />
-  <path d="M72 72h112v28H72z" fill="#f3f4f6" />
-  <path d="M72 114h72v28H72z" fill="#d1fae5" />
-  <path d="M72 156h112v28H72z" fill="#fbbf24" />
-  <circle cx="184" cy="128" r="28" fill="#f3f4f6" />
-  <circle cx="184" cy="128" r="12" fill="#0f766e" />
+  <rect width="256" height="256" rx="56" fill="url(#bg)" />
+  <circle cx="128" cy="128" r="88" fill="url(#glow)" />
+  <circle cx="128" cy="128" r="72" fill="none" stroke="url(#outerRing)" stroke-width="24" filter="url(#softGlow)" />
+  <circle cx="128" cy="128" r="56" fill="none" stroke="url(#innerRing)" stroke-width="12" />
+  <circle cx="128" cy="128" r="38" fill="#071116" stroke="#16323b" stroke-width="6" />
+  <path d="M182 64l5.5 14.5L202 84l-14.5 5.5L182 104l-5.5-14.5L162 84l14.5-5.5L182 64z" fill="#dcfff6" />
 </svg>

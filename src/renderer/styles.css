@@ -510,6 +510,13 @@ code {
   gap: 12px;
 }
 
+.home-status-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .panel-title-row {
   display: inline-flex;
   align-items: center;

@@ -27,11 +27,28 @@ interface MainWindowControllerOptions {
 export class MainWindowController {
   private mainWindow: BrowserWindow | null = null;
   private skipTaskbarRepairTimer: NodeJS.Timeout | null = null;
+  private visibleByIntent = false;
 
   constructor(private readonly options: MainWindowControllerOptions) {}
 
   getWindow(): BrowserWindow | null {
     return this.mainWindow;
+  }
+
+  isVisible(): boolean {
+    if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+      return false;
+    }
+
+    if (!this.visibleByIntent) {
+      return false;
+    }
+
+    try {
+      return this.mainWindow.isVisible() || this.visibleByIntent;
+    } catch {
+      return this.visibleByIntent;
+    }
   }
 
   async ensureWindow(): Promise<BrowserWindow> {
@@ -69,6 +86,7 @@ export class MainWindowController {
       windowOptions.type = "toolbar";
     }
     this.mainWindow = new BrowserWindow(windowOptions);
+    this.visibleByIntent = false;
 
     this.mainWindow.webContents.setWindowOpenHandler(({ url }) => {
       void shell.openExternal(url);
@@ -84,6 +102,7 @@ export class MainWindowController {
 
   async reveal(): Promise<void> {
     const window = await this.ensureWindow();
+    this.visibleByIntent = true;
     this.enforceSkipTaskbar(window);
     window.show();
     window.focus();
@@ -94,6 +113,7 @@ export class MainWindowController {
     if (!this.mainWindow || this.mainWindow.isDestroyed()) {
       return;
     }
+    this.visibleByIntent = false;
     this.mainWindow.hide();
     this.options.onRuntimeSignal();
   }
@@ -104,7 +124,7 @@ export class MainWindowController {
       return;
     }
 
-    if (!this.mainWindow.isVisible()) {
+    if (!this.isVisible()) {
       await this.reveal();
       return;
     }
@@ -186,16 +206,21 @@ export class MainWindowController {
         return;
       }
       event.preventDefault();
+      this.visibleByIntent = false;
       window.hide();
       this.options.onRuntimeSignal();
     });
     window.on("focus", () => this.options.onRuntimeSignal());
     window.on("blur", () => this.options.onRuntimeSignal());
     window.on("show", () => {
+      this.visibleByIntent = true;
       this.enforceSkipTaskbar(window);
       this.options.onRuntimeSignal();
     });
-    window.on("hide", () => this.options.onRuntimeSignal());
+    window.on("hide", () => {
+      this.visibleByIntent = false;
+      this.options.onRuntimeSignal();
+    });
     window.on("resize", () => {
       this.options.onWindowBoundsChanged(window.getBounds());
     });
@@ -207,6 +232,7 @@ export class MainWindowController {
         clearTimeout(this.skipTaskbarRepairTimer);
         this.skipTaskbarRepairTimer = null;
       }
+      this.visibleByIntent = false;
       this.mainWindow = null;
       this.options.onRuntimeSignal();
       this.options.onWindowClosed();

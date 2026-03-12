@@ -24,10 +24,7 @@ const hostEnvironment = resolveHostEnvironment({ env: process.env, platform: pro
 
 app.setName(APP_NAME);
 app.setPath("userData", configDir);
-(app as typeof app & { setDesktopName?: (desktopName: string) => void }).setDesktopName?.(
-  `${APP_ID}.desktop`
-);
-app.commandLine.appendSwitch("class", APP_ID);
+(app as typeof app & { setDesktopName?: (desktopName: string) => void }).setDesktopName?.("aiprotal.desktop");
 if (enableNoSandbox) {
   app.commandLine.appendSwitch("no-sandbox");
 }

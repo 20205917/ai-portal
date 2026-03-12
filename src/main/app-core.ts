@@ -131,7 +131,8 @@ export class AppCore {
       openExternalProvider: async (providerId) => {
         const provider = this.getProvider(providerId);
         this.externalWindowManager.open(provider);
-      }
+      },
+      hideWindow: async () => this.hideMainWindow()
     });
   }
 
@@ -142,7 +143,6 @@ export class AppCore {
     this.broadcastShortcutStatus();
     const tray = new TrayController({
       iconPath: this.options.trayIconPath,
-      onToggleWindow: () => this.toggleMainWindow(),
       onShowWindow: () => this.revealMainWindow(),
       onHideWindow: () => this.hideMainWindow(),
       onExitApp: () => {
@@ -212,7 +212,7 @@ export class AppCore {
       return "stopped";
     }
 
-    if (!window.isVisible()) {
+    if (!this.windowController.isVisible()) {
       return "hidden";
     }
     return window.isFocused() ? "visible-focused" : "visible-unfocused";

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type MenuItem = {
   label?: string;
@@ -20,6 +20,7 @@ const trayMocks = vi.hoisted(() => ({
   createdTrays: [] as Array<{
     icon: unknown;
     clickHandler: (() => void) | null;
+    doubleClickHandler: (() => void) | null;
     menu: { template: MenuItem[] } | null;
   }>
 }));
@@ -32,6 +33,7 @@ vi.mock("electron", () => {
     icon: unknown;
     menu: { template: MenuItem[] } | null = null;
     clickHandler: (() => void) | null = null;
+    doubleClickHandler: (() => void) | null = null;
 
     constructor(icon: unknown) {
       this.icon = icon;
@@ -43,6 +45,10 @@ vi.mock("electron", () => {
     on(event: string, handler: () => void): void {
       if (event === "click") {
         this.clickHandler = handler;
+        return;
+      }
+      if (event === "double-click") {
+        this.doubleClickHandler = handler;
       }
     }
 
@@ -73,21 +79,25 @@ function latestTemplate(): MenuItem[] {
 
 describe("TrayController", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     trayMocks.buildFromTemplate.mockClear();
     trayMocks.createFromPath.mockClear();
     trayMocks.defaultBaseIcon.resize.mockClear();
     trayMocks.createdTrays.length = 0;
   });
 
+  afterEach(() => {
+    vi.runOnlyPendingTimers();
+    vi.useRealTimers();
+  });
+
   it("enables show action when window is hidden", async () => {
-    const onToggleWindow = vi.fn(async () => undefined);
     const onShowWindow = vi.fn(async () => undefined);
     const onHideWindow = vi.fn(async () => undefined);
     const onExitApp = vi.fn();
 
     const controller = new TrayController({
       iconPath: "/tmp/tray.png",
-      onToggleWindow,
       onShowWindow,
       onHideWindow,
       onExitApp,
@@ -115,7 +125,6 @@ describe("TrayController", () => {
 
     expect(onShowWindow).toHaveBeenCalledTimes(1);
     expect(onHideWindow).not.toHaveBeenCalled();
-    expect(onToggleWindow).not.toHaveBeenCalled();
 
     template[3]?.click?.();
     expect(onExitApp).toHaveBeenCalledTimes(1);
@@ -123,14 +132,12 @@ describe("TrayController", () => {
     controller.destroy();
   });
 
-  it("enables hide action and keeps tray click as toggle when window is visible", async () => {
-    const onToggleWindow = vi.fn(async () => undefined);
+  it("enables hide action when window is visible", async () => {
     const onShowWindow = vi.fn(async () => undefined);
     const onHideWindow = vi.fn(async () => undefined);
 
     const controller = new TrayController({
       iconPath: "/tmp/tray.png",
-      onToggleWindow,
       onShowWindow,
       onHideWindow,
       onExitApp: vi.fn(),
@@ -154,7 +161,59 @@ describe("TrayController", () => {
     const tray = trayMocks.createdTrays.at(-1);
     tray?.clickHandler?.();
     await Promise.resolve();
-    expect(onToggleWindow).toHaveBeenCalledTimes(1);
+    expect(onShowWindow).toHaveBeenCalledTimes(1);
+
+    controller.destroy();
+  });
+
+  it("uses tray click and double-click to show or focus the window", async () => {
+    const onShowWindow = vi.fn(async () => undefined);
+    const onHideWindow = vi.fn(async () => undefined);
+
+    const controller = new TrayController({
+      iconPath: "/tmp/tray.png",
+      onShowWindow,
+      onHideWindow,
+      onExitApp: vi.fn(),
+      onTrayUnavailable: vi.fn()
+    });
+
+    const tray = trayMocks.createdTrays.at(-1);
+    tray?.clickHandler?.();
+    tray?.doubleClickHandler?.();
+    await Promise.resolve();
+
+    expect(onShowWindow).toHaveBeenCalledTimes(2);
+    expect(onHideWindow).not.toHaveBeenCalled();
+
+    controller.destroy();
+  });
+
+  it("keeps both show and hide actions enabled when window is visible but unfocused", async () => {
+    const onShowWindow = vi.fn(async () => undefined);
+    const onHideWindow = vi.fn(async () => undefined);
+
+    const controller = new TrayController({
+      iconPath: "/tmp/tray.png",
+      onShowWindow,
+      onHideWindow,
+      onExitApp: vi.fn(),
+      onTrayUnavailable: vi.fn()
+    });
+    controller.refreshMenu("visible-unfocused");
+
+    const template = latestTemplate();
+    expect(template[0]?.label).toBe("显示调度台");
+    expect(template[0]?.enabled).toBe(true);
+    expect(template[1]?.label).toBe("隐藏调度台");
+    expect(template[1]?.enabled).toBe(true);
+
+    template[0]?.click?.();
+    template[1]?.click?.();
+    await Promise.resolve();
+
+    expect(onShowWindow).toHaveBeenCalledTimes(1);
+    expect(onHideWindow).toHaveBeenCalledTimes(1);
 
     controller.destroy();
   });
@@ -171,7 +230,6 @@ describe("TrayController", () => {
 
     const controller = new TrayController({
       iconPath: "/tmp/tray.png",
-      onToggleWindow: vi.fn(async () => undefined),
       onShowWindow: vi.fn(async () => undefined),
       onHideWindow: vi.fn(async () => undefined),
       onExitApp: vi.fn(),

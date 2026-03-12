@@ -4,7 +4,6 @@ import type { RuntimeState } from "../shared/types";
 
 interface TrayControllerOptions {
   iconPath: string;
-  onToggleWindow: () => Promise<void>;
   onShowWindow: () => Promise<void>;
   onHideWindow: () => Promise<void>;
   onExitApp: () => void;
@@ -13,6 +12,10 @@ interface TrayControllerOptions {
 
 function isWindowVisible(state: RuntimeState): boolean {
   return state === "visible-focused" || state === "visible-unfocused";
+}
+
+function canShowWindow(state: RuntimeState): boolean {
+  return state !== "visible-focused";
 }
 
 export class TrayController {
@@ -33,7 +36,10 @@ export class TrayController {
       this.tray = new Tray(icon);
       this.tray.setToolTip("AIProtal");
       this.tray.on("click", () => {
-        void this.options.onToggleWindow();
+        void this.options.onShowWindow();
+      });
+      this.tray.on("double-click", () => {
+        void this.options.onShowWindow();
       });
       this.refreshMenu(this.runtimeState);
     } catch (error) {
@@ -64,12 +70,13 @@ export class TrayController {
     }
 
     const visible = isWindowVisible(state);
+    const canShow = canShowWindow(state);
     const menu = Menu.buildFromTemplate([
       {
         label: "显示调度台",
-        enabled: !visible,
+        enabled: canShow,
         click: () => {
-          if (!visible) {
+          if (canShow) {
             void this.options.onShowWindow();
           }
         }

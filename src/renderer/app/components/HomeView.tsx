@@ -24,6 +24,7 @@ interface HomeViewProps {
   setForm: (next: NewProviderInput) => void;
   onOpenProvider: (providerId: string) => Promise<void>;
   onOpenSettings: () => void;
+  onHideWindow: () => Promise<void>;
   onToggleProviderVisibility: (provider: ProviderDefinition) => Promise<void>;
   onRemoveProvider: (provider: ProviderDefinition) => Promise<void>;
   onSetProviderEngine: (providerId: string, engine: ProviderDefinition["engine"]) => Promise<void>;
@@ -62,6 +63,7 @@ export function HomeView(props: HomeViewProps) {
     setForm,
     onOpenProvider,
     onOpenSettings,
+    onHideWindow,
     onToggleProviderVisibility,
     onRemoveProvider,
     onSetProviderEngine,
@@ -84,9 +86,14 @@ export function HomeView(props: HomeViewProps) {
               </ul>
             </InfoTip>
           </div>
-          <button type="button" className="primary-action" onClick={onOpenSettings}>
-            打开设置
-          </button>
+          <div className="home-status-actions">
+            <button type="button" className="primary-action" onClick={onOpenSettings}>
+              设置
+            </button>
+            <button type="button" className="primary-action" onClick={() => void onHideWindow()}>
+              退出
+            </button>
+          </div>
         </div>
         <div className="status-grid">
           <article className="status-card">

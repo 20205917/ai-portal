@@ -21,6 +21,7 @@ declare global {
       createProvider: (input: NewProviderInput) => Promise<void>;
       removeProvider: (providerId: string) => Promise<void>;
       openExternalProvider: (providerId: string) => Promise<void>;
+      hideWindow: () => Promise<void>;
       getSystemMetrics: () => Promise<SystemMetricsSnapshot>;
       onProvidersUpdated: (
         listener: (payload: { providers: ProviderDefinition[]; activeProviderId: string }) => void
