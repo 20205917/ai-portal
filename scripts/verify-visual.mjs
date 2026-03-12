@@ -14,7 +14,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const artifactsRoot = path.join(rootDir, "artifacts", "visual");
 const require = createRequire(import.meta.url);
 const visualKeepRuns = Math.max(
-  Number.parseInt(process.env.AIDC_VISUAL_KEEP ?? "8", 10) || 8,
+  Number.parseInt(process.env.AIDC_VISUAL_KEEP ?? "5", 10) || 5,
   1
 );
 

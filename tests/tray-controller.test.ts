@@ -9,21 +9,32 @@ type MenuItem = {
 
 const trayMocks = vi.hoisted(() => ({
   buildFromTemplate: vi.fn((template: MenuItem[]) => ({ template })),
-  createFromPath: vi.fn(() => ({
+  defaultResizedIcon: {
     isEmpty: () => false
-  })),
+  },
+  defaultBaseIcon: {
+    isEmpty: () => false,
+    resize: vi.fn()
+  },
+  createFromPath: vi.fn(),
   createdTrays: [] as Array<{
+    icon: unknown;
     clickHandler: (() => void) | null;
     menu: { template: MenuItem[] } | null;
   }>
 }));
 
+trayMocks.defaultBaseIcon.resize.mockImplementation(() => trayMocks.defaultResizedIcon);
+trayMocks.createFromPath.mockImplementation(() => trayMocks.defaultBaseIcon);
+
 vi.mock("electron", () => {
   class Tray {
+    icon: unknown;
     menu: { template: MenuItem[] } | null = null;
     clickHandler: (() => void) | null = null;
 
-    constructor(_icon: unknown) {
+    constructor(icon: unknown) {
+      this.icon = icon;
       trayMocks.createdTrays.push(this);
     }
 
@@ -64,6 +75,7 @@ describe("TrayController", () => {
   beforeEach(() => {
     trayMocks.buildFromTemplate.mockClear();
     trayMocks.createFromPath.mockClear();
+    trayMocks.defaultBaseIcon.resize.mockClear();
     trayMocks.createdTrays.length = 0;
   });
 
@@ -81,6 +93,14 @@ describe("TrayController", () => {
       onExitApp,
       onTrayUnavailable: vi.fn()
     });
+    expect(trayMocks.createFromPath).toHaveBeenCalledWith("/tmp/tray.png");
+    expect(trayMocks.defaultBaseIcon.resize).toHaveBeenCalledWith({
+      width: 20,
+      height: 20,
+      quality: "best"
+    });
+    const trayIcon = trayMocks.createdTrays.at(-1)?.icon;
+    expect(trayIcon).toBe(trayMocks.defaultResizedIcon);
     controller.refreshMenu("hidden");
 
     const template = latestTemplate();
@@ -136,6 +156,30 @@ describe("TrayController", () => {
     await Promise.resolve();
     expect(onToggleWindow).toHaveBeenCalledTimes(1);
 
+    controller.destroy();
+  });
+
+  it("falls back to base icon when resized icon is empty", () => {
+    const resizedEmptyIcon = {
+      isEmpty: () => true
+    };
+    const baseIcon = {
+      isEmpty: () => false,
+      resize: vi.fn(() => resizedEmptyIcon)
+    };
+    trayMocks.createFromPath.mockReturnValueOnce(baseIcon);
+
+    const controller = new TrayController({
+      iconPath: "/tmp/tray.png",
+      onToggleWindow: vi.fn(async () => undefined),
+      onShowWindow: vi.fn(async () => undefined),
+      onHideWindow: vi.fn(async () => undefined),
+      onExitApp: vi.fn(),
+      onTrayUnavailable: vi.fn()
+    });
+
+    const trayIcon = trayMocks.createdTrays.at(-1)?.icon;
+    expect(trayIcon).toBe(baseIcon);
     controller.destroy();
   });
 });

@@ -41,6 +41,23 @@ body {
   -webkit-app-region: drag;
 }
 
+.window-drag-region::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 12px;
+  right: 12px;
+  height: 4px;
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.2) 0%,
+    rgba(203, 213, 225, 0.58) 50%,
+    rgba(148, 163, 184, 0.2) 100%
+  );
+}
+
 button,
 input,
 code {

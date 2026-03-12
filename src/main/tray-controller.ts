@@ -25,7 +25,7 @@ export class TrayController {
 
   private createTray(): void {
     try {
-      const icon = nativeImage.createFromPath(this.options.iconPath);
+      const icon = this.createTrayIcon();
       if (icon.isEmpty()) {
         throw new Error(`Tray icon is empty: ${this.options.iconPath}`);
       }
@@ -41,6 +41,20 @@ export class TrayController {
       this.tray = null;
       this.options.onTrayUnavailable();
     }
+  }
+
+  private createTrayIcon() {
+    const baseIcon = nativeImage.createFromPath(this.options.iconPath);
+    if (baseIcon.isEmpty()) {
+      return baseIcon;
+    }
+
+    const resized = baseIcon.resize({
+      width: 20,
+      height: 20,
+      quality: "best"
+    });
+    return resized.isEmpty() ? baseIcon : resized;
   }
 
   refreshMenu(state: RuntimeState): void {
