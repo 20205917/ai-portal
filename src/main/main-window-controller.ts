@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { BrowserWindow, nativeImage, shell } from "electron";
+import { BrowserWindow, type BrowserWindowConstructorOptions, nativeImage, shell } from "electron";
 
 import {
   DEFAULT_WINDOW_HEIGHT,
@@ -26,6 +26,7 @@ interface MainWindowControllerOptions {
 
 export class MainWindowController {
   private mainWindow: BrowserWindow | null = null;
+  private skipTaskbarRepairTimer: NodeJS.Timeout | null = null;
 
   constructor(private readonly options: MainWindowControllerOptions) {}
 
@@ -40,7 +41,7 @@ export class MainWindowController {
 
     const bounds = this.options.getWindowBounds();
     const icon = nativeImage.createFromPath(this.options.iconPath);
-    this.mainWindow = new BrowserWindow({
+    const windowOptions: BrowserWindowConstructorOptions = {
       width: bounds.width || DEFAULT_WINDOW_WIDTH,
       height: bounds.height || DEFAULT_WINDOW_HEIGHT,
       x: bounds.x,
@@ -63,7 +64,11 @@ export class MainWindowController {
         sandbox: false,
         webviewTag: true
       }
-    });
+    };
+    if (process.platform === "linux") {
+      windowOptions.type = "toolbar";
+    }
+    this.mainWindow = new BrowserWindow(windowOptions);
 
     this.mainWindow.webContents.setWindowOpenHandler(({ url }) => {
       void shell.openExternal(url);
@@ -79,7 +84,7 @@ export class MainWindowController {
 
   async reveal(): Promise<void> {
     const window = await this.ensureWindow();
-    window.setSkipTaskbar(true);
+    this.enforceSkipTaskbar(window);
     window.show();
     window.focus();
     this.options.onRuntimeSignal();
@@ -187,7 +192,7 @@ export class MainWindowController {
     window.on("focus", () => this.options.onRuntimeSignal());
     window.on("blur", () => this.options.onRuntimeSignal());
     window.on("show", () => {
-      window.setSkipTaskbar(true);
+      this.enforceSkipTaskbar(window);
       this.options.onRuntimeSignal();
     });
     window.on("hide", () => this.options.onRuntimeSignal());
@@ -198,9 +203,29 @@ export class MainWindowController {
       this.options.onWindowBoundsChanged(window.getBounds());
     });
     window.on("closed", () => {
+      if (this.skipTaskbarRepairTimer) {
+        clearTimeout(this.skipTaskbarRepairTimer);
+        this.skipTaskbarRepairTimer = null;
+      }
       this.mainWindow = null;
       this.options.onRuntimeSignal();
       this.options.onWindowClosed();
     });
+  }
+
+  private enforceSkipTaskbar(window: BrowserWindow): void {
+    window.setSkipTaskbar(true);
+    if (this.skipTaskbarRepairTimer) {
+      clearTimeout(this.skipTaskbarRepairTimer);
+      this.skipTaskbarRepairTimer = null;
+    }
+    // Some Linux window managers re-apply taskbar hints after map; force once more after show.
+    this.skipTaskbarRepairTimer = setTimeout(() => {
+      if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+        return;
+      }
+      this.mainWindow.setSkipTaskbar(true);
+      this.skipTaskbarRepairTimer = null;
+    }, 120);
   }
 }
