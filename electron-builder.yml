@@ -1,0 +1,31 @@
+appId: com.yimu.AIDispatchCenter
+productName: AIDispatchCenter
+artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+
+directories:
+  output: release
+
+files:
+  - "dist/**/*"
+  - "assets/**/*"
+  - "package.json"
+
+asar: true
+
+linux:
+  target:
+    - target: deb
+      arch:
+        - x64
+  category: Utility
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
