@@ -1,6 +1,7 @@
 import fs from "node:fs";
 
 import {
+  DEFAULT_TOGGLE_WINDOW_HOTKEY,
   DEFAULT_WINDOW_HEIGHT,
   DEFAULT_WINDOW_WIDTH,
   SETTINGS_VERSION,
@@ -10,6 +11,8 @@ import {
 } from "../shared/constants";
 import type {
   AppSettings,
+  HotkeySettings,
+  HotkeySettingsPatch,
   LoadingOverlayMode,
   NewProviderInput,
   ProviderDefinition,
@@ -52,10 +55,20 @@ export function defaultSettings(): AppSettings {
 export function defaultUiSettings(): UiSettings {
   return {
     keepAliveLimit: UI_KEEP_ALIVE_DEFAULT,
+    backgroundResident: true,
     sidebarAutoHide: false,
     startupView: "workspace",
     loadingOverlayMode: "immediate",
-    autoFallbackOnEmbedError: false
+    autoFallbackOnEmbedError: false,
+    hotkeys: defaultHotkeySettings()
+  };
+}
+
+export function defaultHotkeySettings(): HotkeySettings {
+  return {
+    toggleWindow: DEFAULT_TOGGLE_WINDOW_HOTKEY,
+    providerNext: null,
+    providerPrev: null
   };
 }
 
@@ -83,6 +96,22 @@ function normalizeKeepAliveLimit(value: unknown, fallback: number): number {
   return Math.min(UI_KEEP_ALIVE_MAX, Math.max(UI_KEEP_ALIVE_MIN, normalized));
 }
 
+function normalizeHotkeyValue(value: unknown, fallback: string | null, allowNull: boolean): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return allowNull ? null : fallback;
+    }
+    return trimmed;
+  }
+
+  if (allowNull && value === null) {
+    return null;
+  }
+
+  return fallback;
+}
+
 function parseWindowBounds(value: unknown): WindowBounds {
   const fallback = defaultWindowBounds();
   if (!isObject(value)) {
@@ -96,6 +125,22 @@ function parseWindowBounds(value: unknown): WindowBounds {
   return { width, height, x, y };
 }
 
+function parseHotkeySettings(value: unknown, fallback: HotkeySettings = defaultHotkeySettings()): HotkeySettings {
+  if (!isObject(value)) {
+    return fallback;
+  }
+
+  return {
+    toggleWindow: normalizeHotkeyValue(value.toggleWindow, fallback.toggleWindow, false) ?? fallback.toggleWindow,
+    providerNext: normalizeHotkeyValue(value.providerNext, fallback.providerNext, true),
+    providerPrev: normalizeHotkeyValue(value.providerPrev, fallback.providerPrev, true)
+  };
+}
+
+export function mergeHotkeySettings(current: HotkeySettings, patch: HotkeySettingsPatch): HotkeySettings {
+  return parseHotkeySettings({ ...current, ...patch }, current);
+}
+
 function parseUiSettings(value: unknown, fallback: UiSettings = defaultUiSettings()): UiSettings {
   if (!isObject(value)) {
     return fallback;
@@ -103,6 +148,9 @@ function parseUiSettings(value: unknown, fallback: UiSettings = defaultUiSetting
 
   return {
     keepAliveLimit: normalizeKeepAliveLimit(value.keepAliveLimit, fallback.keepAliveLimit),
+    backgroundResident: typeof value.backgroundResident === "boolean"
+      ? value.backgroundResident
+      : fallback.backgroundResident,
     sidebarAutoHide: typeof value.sidebarAutoHide === "boolean" ? value.sidebarAutoHide : fallback.sidebarAutoHide,
     startupView: isStartupView(value.startupView) ? value.startupView : fallback.startupView,
     loadingOverlayMode: isLoadingOverlayMode(value.loadingOverlayMode)
@@ -110,12 +158,16 @@ function parseUiSettings(value: unknown, fallback: UiSettings = defaultUiSetting
       : fallback.loadingOverlayMode,
     autoFallbackOnEmbedError: typeof value.autoFallbackOnEmbedError === "boolean"
       ? value.autoFallbackOnEmbedError
-      : fallback.autoFallbackOnEmbedError
+      : fallback.autoFallbackOnEmbedError,
+    hotkeys: parseHotkeySettings(value.hotkeys, fallback.hotkeys)
   };
 }
 
 export function mergeUiSettings(current: UiSettings, patch: UiSettingsPatch): UiSettings {
-  return parseUiSettings({ ...current, ...patch }, current);
+  const mergedHotkeys = patch.hotkeys
+    ? mergeHotkeySettings(current.hotkeys, patch.hotkeys)
+    : current.hotkeys;
+  return parseUiSettings({ ...current, ...patch, hotkeys: mergedHotkeys }, current);
 }
 
 function parseProvider(provider: unknown): ProviderDefinition | null {

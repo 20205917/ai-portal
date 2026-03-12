@@ -74,6 +74,14 @@ app.on("web-contents-created", (_event, contents) => {
   });
 });
 
-app.on("before-quit", () => {
-  core.shutdown();
+let shutdownInProgress = false;
+app.on("before-quit", (event) => {
+  if (shutdownInProgress) {
+    return;
+  }
+  shutdownInProgress = true;
+  event.preventDefault();
+  void core.shutdown().finally(() => {
+    app.exit(0);
+  });
 });

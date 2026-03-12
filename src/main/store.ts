@@ -54,10 +54,14 @@ function cloneRuntimeSnapshot(snapshot: RuntimeSnapshot): RuntimeSnapshot {
 function sameUiSettings(left: AppSettings["ui"], right: AppSettings["ui"]): boolean {
   return (
     left.keepAliveLimit === right.keepAliveLimit
+    && left.backgroundResident === right.backgroundResident
     && left.sidebarAutoHide === right.sidebarAutoHide
     && left.startupView === right.startupView
     && left.loadingOverlayMode === right.loadingOverlayMode
     && left.autoFallbackOnEmbedError === right.autoFallbackOnEmbedError
+    && left.hotkeys.toggleWindow === right.hotkeys.toggleWindow
+    && left.hotkeys.providerNext === right.hotkeys.providerNext
+    && left.hotkeys.providerPrev === right.hotkeys.providerPrev
   );
 }
 
@@ -70,6 +74,8 @@ export class AppStore {
   private lastPersistedRuntimeJson = "";
   private settingsWriteTimer: NodeJS.Timeout | null = null;
   private runtimeWriteTimer: NodeJS.Timeout | null = null;
+  private settingsWriteInFlight: Promise<void> = Promise.resolve();
+  private settingsWriteSeq = 0;
 
   constructor(private readonly configDir: string) {
     fs.mkdirSync(configDir, { recursive: true });
@@ -93,7 +99,7 @@ export class AppStore {
       version: SETTINGS_VERSION,
       startupResetDone: true
     };
-    this.persistSettingsNow();
+    this.persistSettingsSync();
   }
 
   private backupSettingsFile(): void {
@@ -111,7 +117,7 @@ export class AppStore {
     fs.copyFileSync(this.settingsPath, backupPath);
   }
 
-  private persistSettingsNow(): void {
+  private persistSettingsSync(): void {
     if (this.settingsWriteTimer) {
       clearTimeout(this.settingsWriteTimer);
       this.settingsWriteTimer = null;
@@ -123,6 +129,35 @@ export class AppStore {
     }
     fs.writeFileSync(this.settingsPath, serialized);
     this.lastPersistedSettingsJson = serialized;
+  }
+
+  private enqueueSettingsWrite(serialized: string): void {
+    if (serialized === this.lastPersistedSettingsJson) {
+      return;
+    }
+
+    const seq = ++this.settingsWriteSeq;
+    this.settingsWriteInFlight = this.settingsWriteInFlight
+      .catch(() => undefined)
+      .then(async () => {
+        if (seq < this.settingsWriteSeq || serialized === this.lastPersistedSettingsJson) {
+          return;
+        }
+        try {
+          await fs.promises.writeFile(this.settingsPath, serialized);
+          this.lastPersistedSettingsJson = serialized;
+        } catch (error) {
+          console.error("[AIDC] Failed to persist settings:", error instanceof Error ? error.message : String(error));
+        }
+      });
+  }
+
+  private persistSettingsNow(): void {
+    if (this.settingsWriteTimer) {
+      clearTimeout(this.settingsWriteTimer);
+      this.settingsWriteTimer = null;
+    }
+    this.enqueueSettingsWrite(serializeJson(this.settingsCache));
   }
 
   private persistSettingsDebounced(): void {
@@ -165,7 +200,10 @@ export class AppStore {
   getSettings(): AppSettings {
     return {
       ...this.settingsCache,
-      ui: { ...this.settingsCache.ui },
+      ui: {
+        ...this.settingsCache.ui,
+        hotkeys: { ...this.settingsCache.ui.hotkeys }
+      },
       providerOverrides: { ...this.settingsCache.providerOverrides },
       customProviders: this.settingsCache.customProviders.map((provider) => ({ ...provider }))
     };
@@ -178,7 +216,7 @@ export class AppStore {
       version: SETTINGS_VERSION,
       startupResetDone: true
     };
-    this.persistSettingsNow();
+    this.persistSettingsDebounced();
     return this.getSettings();
   }
 
@@ -283,8 +321,9 @@ export class AppStore {
     this.persistRuntimeDebounced();
   }
 
-  flushPendingWrites(): void {
+  async flushPendingWrites(): Promise<void> {
     this.persistSettingsNow();
+    await this.settingsWriteInFlight.catch(() => undefined);
     this.persistRuntimeNow();
   }
 }

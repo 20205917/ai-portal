@@ -5,18 +5,26 @@ import {
   broadcastProviders,
   broadcastRuntime,
   broadcastSettings,
+  broadcastShortcutStatus,
   registerIpc
 } from "./ipc";
 import { MainWindowController } from "./main-window-controller";
+import { cycleEnabledProvider, type ProviderCycleDirection } from "./provider-cycle";
 import { ProviderIconOrchestrator } from "./provider-icon-orchestrator";
 import {
   isProviderEngineAllowed,
   pickDefaultProvider,
   resolveProviders
 } from "./provider-registry";
+import { ShortcutManager } from "./shortcut-manager";
 import { AppStore } from "./store";
 import { TrayController } from "./tray-controller";
-import { parseAidcArgs, type CommandPayload, type CommandResponse } from "../shared/commands";
+import {
+  parseAidcArgs,
+  type CommandDiagnostics,
+  type CommandPayload,
+  type CommandResponse
+} from "../shared/commands";
 import type {
   AppSettings,
   HostEnvironment,
@@ -24,6 +32,7 @@ import type {
   ProviderDefinition,
   RuntimeSnapshot,
   RuntimeState,
+  ShortcutStatus,
   UiSettingsPatch
 } from "../shared/types";
 
@@ -47,6 +56,9 @@ export class AppCore {
   private readonly commandServer: CommandServer;
   private readonly windowController: MainWindowController;
   private readonly providerIconOrchestrator: ProviderIconOrchestrator;
+  private readonly shortcutManager: ShortcutManager;
+  private shortcutStatus: ShortcutStatus;
+  private commandDiagnostics: CommandDiagnostics = {};
   private trayController: TrayController | null = null;
 
   constructor(private readonly options: AppCoreOptions) {
@@ -69,7 +81,7 @@ export class AppCore {
       rendererUrl: options.rendererUrl,
       debugRenderer: options.debugRenderer,
       getWindowBounds: () => this.getSettings().windowBounds,
-      shouldCloseWindow: () => this.shutdownRequested || this.trayController === null,
+      shouldCloseWindow: () => this.shouldCloseWindow(),
       onRuntimeSignal: () => this.syncRuntime(),
       onWindowClosed: () => {
         if (!this.shutdownRequested) {
@@ -89,6 +101,13 @@ export class AppCore {
       },
       onProviderIconUpdated: () => this.broadcastAppState()
     });
+    this.shortcutManager = new ShortcutManager({
+      isX11: this.options.hostEnvironment.sessionType.toLowerCase() === "x11",
+      onToggleWindow: () => this.toggleMainWindow(),
+      onProviderNext: () => this.cycleProviderWithReveal("next"),
+      onProviderPrev: () => this.cycleProviderWithReveal("prev")
+    });
+    this.shortcutStatus = this.shortcutManager.getStatus();
 
     registerIpc({
       getProviders: () => this.providers,
@@ -98,6 +117,7 @@ export class AppCore {
       getSocketPath: () => this.options.socketPath,
       getEnvironment: () => this.options.hostEnvironment,
       getUiSettings: () => this.getSettings().ui,
+      getShortcutStatus: () => this.shortcutStatus,
       selectProvider: this.selectProvider.bind(this),
       updateUiSettings: this.updateUiSettings.bind(this),
       setProviderEngine: this.setProviderEngine.bind(this),
@@ -113,7 +133,9 @@ export class AppCore {
 
   async start(initialCommand: CommandPayload): Promise<void> {
     await this.commandServer.listen();
+    this.shortcutStatus = this.shortcutManager.apply(this.getSettings().ui.hotkeys);
     await this.windowController.ensureWindow();
+    this.broadcastShortcutStatus();
     const tray = new TrayController({
       iconPath: this.options.trayIconPath,
       onToggleWindow: () => this.toggleMainWindow(),
@@ -143,10 +165,11 @@ export class AppCore {
     void this.handleCommand(payload);
   }
 
-  shutdown(): void {
+  async shutdown(): Promise<void> {
     this.shutdownRequested = true;
-    this.store.flushPendingWrites();
+    await this.store.flushPendingWrites();
     this.commandServer.close();
+    this.shortcutManager.unregisterAll();
     this.trayController?.destroy();
   }
 
@@ -162,6 +185,13 @@ export class AppCore {
 
   private refreshProviders(): void {
     this.providers = resolveProviders(this.getSettings());
+  }
+
+  private shouldCloseWindow(): boolean {
+    if (this.shutdownRequested) {
+      return true;
+    }
+    return !this.getSettings().ui.backgroundResident;
   }
 
   private getProvider(providerId: string): ProviderDefinition {
@@ -230,6 +260,19 @@ export class AppCore {
     await this.windowController.toggle();
   }
 
+  private async cycleProvider(direction: ProviderCycleDirection): Promise<void> {
+    const nextProvider = cycleEnabledProvider(this.providers, this.activeProviderId, direction);
+    if (!nextProvider) {
+      return;
+    }
+    await this.selectProvider(nextProvider.id);
+  }
+
+  private async cycleProviderWithReveal(direction: ProviderCycleDirection): Promise<void> {
+    await this.revealMainWindow();
+    await this.cycleProvider(direction);
+  }
+
   private async selectProvider(providerId: string): Promise<void> {
     const provider = this.getProvider(providerId);
     this.activeProviderId = provider.id;
@@ -243,11 +286,25 @@ export class AppCore {
 
   private async updateUiSettings(patch: UiSettingsPatch): Promise<void> {
     this.store.saveUiSettings(patch);
+    if (patch.hotkeys) {
+      this.shortcutStatus = this.shortcutManager.apply(this.getSettings().ui.hotkeys);
+    }
     const window = this.windowController.getWindow();
     if (!window || window.isDestroyed()) {
       return;
     }
     broadcastSettings(window, this.getSettings().ui);
+    if (patch.hotkeys) {
+      broadcastShortcutStatus(window, this.shortcutStatus);
+    }
+  }
+
+  private broadcastShortcutStatus(): void {
+    const window = this.windowController.getWindow();
+    if (!window || window.isDestroyed()) {
+      return;
+    }
+    broadcastShortcutStatus(window, this.shortcutStatus);
   }
 
   private async setProviderEngine(providerId: string, engine: ProviderDefinition["engine"]): Promise<void> {
@@ -317,6 +374,9 @@ export class AppCore {
   }
 
   private async handleCommand(command: CommandPayload): Promise<CommandResponse> {
+    const commandReceivedAtMs = Date.now();
+    const trace = command.trace;
+
     switch (command.command) {
       case "toggle":
         await this.toggleMainWindow();
@@ -335,10 +395,51 @@ export class AppCore {
         break;
       case "status":
         break;
+      case "next":
+        await this.cycleProviderWithReveal("next");
+        break;
+      case "prev":
+        await this.cycleProviderWithReveal("prev");
+        break;
     }
+
+    const runtime = this.syncRuntime();
+    if (command.command === "toggle") {
+      const commandHandledAtMs = Date.now();
+      const clientSentAtMs = trace?.clientSentAtMs;
+      const clientToServerMs = typeof clientSentAtMs === "number"
+        ? Math.max(0, commandReceivedAtMs - clientSentAtMs)
+        : undefined;
+      const endToEndMs = typeof clientSentAtMs === "number"
+        ? Math.max(0, commandHandledAtMs - clientSentAtMs)
+        : undefined;
+      const serverHandleMs = Math.max(0, commandHandledAtMs - commandReceivedAtMs);
+      this.commandDiagnostics.lastToggle = {
+        requestId: trace?.requestId,
+        clientSentAtMs,
+        serverReceivedAtMs: commandReceivedAtMs,
+        serverHandledAtMs: commandHandledAtMs,
+        clientToServerMs,
+        serverHandleMs,
+        endToEndMs,
+        resultingState: runtime.state,
+        activeProviderId: runtime.activeProviderId,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (typeof clientSentAtMs === "number") {
+        console.log(
+          `[AIDC][timing] toggle request=${trace?.requestId ?? "-"} `
+          + `client->server=${clientToServerMs ?? -1}ms `
+          + `server=${serverHandleMs}ms total=${endToEndMs ?? -1}ms state=${runtime.state}`
+        );
+      }
+    }
+
     return {
       ok: true,
-      ...this.syncRuntime()
+      ...runtime,
+      diagnostics: this.commandDiagnostics
     };
   }
 }

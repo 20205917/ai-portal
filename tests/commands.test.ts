@@ -12,5 +12,9 @@ describe("parseAidcArgs", () => {
   it("requires provider id for open", () => {
     expect(() => parseAidcArgs(["open"])).toThrow(/providerId/i);
   });
-});
 
+  it("supports next and prev commands", () => {
+    expect(parseAidcArgs(["next"])).toEqual({ command: "next" });
+    expect(parseAidcArgs(["prev"])).toEqual({ command: "prev" });
+  });
+});

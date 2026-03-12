@@ -4,16 +4,44 @@ import type {
   BootstrapPayload,
   ProviderDefinition,
   RuntimeSnapshot,
+  ShortcutStatus,
   UiSettings
 } from "../../../shared/types";
-import { UI_KEEP_ALIVE_DEFAULT } from "../../../shared/constants";
+import { DEFAULT_TOGGLE_WINDOW_HOTKEY, UI_KEEP_ALIVE_DEFAULT } from "../../../shared/constants";
 
 const defaultUiSettings: UiSettings = {
   keepAliveLimit: UI_KEEP_ALIVE_DEFAULT,
+  backgroundResident: true,
   sidebarAutoHide: false,
   startupView: "workspace",
   loadingOverlayMode: "immediate",
-  autoFallbackOnEmbedError: false
+  autoFallbackOnEmbedError: false,
+  hotkeys: {
+    toggleWindow: DEFAULT_TOGGLE_WINDOW_HOTKEY,
+    providerNext: null,
+    providerPrev: null
+  }
+};
+
+const defaultShortcutStatus: ShortcutStatus = {
+  toggleWindow: {
+    action: "toggleWindow",
+    accelerator: DEFAULT_TOGGLE_WINDOW_HOTKEY,
+    state: "unbound",
+    message: "初始化中"
+  },
+  providerNext: {
+    action: "providerNext",
+    accelerator: null,
+    state: "unbound",
+    message: "未绑定"
+  },
+  providerPrev: {
+    action: "providerPrev",
+    accelerator: null,
+    state: "unbound",
+    message: "未绑定"
+  }
 };
 
 interface BootstrapState {
@@ -23,6 +51,7 @@ interface BootstrapState {
   activeProviderId: string;
   runtime: RuntimeSnapshot;
   uiSettings: UiSettings;
+  shortcutStatus: ShortcutStatus;
   bootstrapError: string;
   setActiveProviderId: (providerId: string) => void;
 }
@@ -38,12 +67,14 @@ export function useBootstrapState(): BootstrapState {
     updatedAt: new Date().toISOString()
   });
   const [uiSettings, setUiSettings] = useState<UiSettings>(defaultUiSettings);
+  const [shortcutStatus, setShortcutStatus] = useState<ShortcutStatus>(defaultShortcutStatus);
   const [bootstrapError, setBootstrapError] = useState("");
 
   useEffect(() => {
     let unbindProviders = () => undefined;
     let unbindRuntime = () => undefined;
     let unbindSettings = () => undefined;
+    let unbindShortcutStatus = () => undefined;
     let disposed = false;
 
     void (async () => {
@@ -58,6 +89,7 @@ export function useBootstrapState(): BootstrapState {
         setActiveProviderId(payload.activeProviderId);
         setRuntime(payload.runtime);
         setUiSettings(payload.settings?.ui ?? defaultUiSettings);
+        setShortcutStatus(payload.shortcutStatus ?? defaultShortcutStatus);
         setBootstrapError("");
         setLoading(false);
 
@@ -73,6 +105,10 @@ export function useBootstrapState(): BootstrapState {
         unbindSettings = window.aidc.onSettingsUpdated((nextSettings) => {
           setUiSettings(nextSettings);
         });
+
+        unbindShortcutStatus = window.aidc.onShortcutStatusUpdated((nextStatus) => {
+          setShortcutStatus(nextStatus);
+        });
       } catch (error) {
         if (disposed) {
           return;
@@ -87,6 +123,7 @@ export function useBootstrapState(): BootstrapState {
       unbindProviders();
       unbindRuntime();
       unbindSettings();
+      unbindShortcutStatus();
     };
   }, []);
 
@@ -97,6 +134,7 @@ export function useBootstrapState(): BootstrapState {
     activeProviderId,
     runtime,
     uiSettings,
+    shortcutStatus,
     bootstrapError,
     setActiveProviderId
   };

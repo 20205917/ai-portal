@@ -7,6 +7,7 @@ import type {
   NewProviderInput,
   ProviderDefinition,
   RuntimeSnapshot,
+  ShortcutStatus,
   UiSettings,
   UiSettingsPatch
 } from "../shared/types";
@@ -19,6 +20,7 @@ interface IpcContext {
   getSocketPath: () => string;
   getEnvironment: () => HostEnvironment;
   getUiSettings: () => UiSettings;
+  getShortcutStatus: () => ShortcutStatus;
   selectProvider: (providerId: string) => Promise<void>;
   updateUiSettings: (patch: UiSettingsPatch) => Promise<void>;
   setProviderEngine: (providerId: string, engine: ProviderDefinition["engine"]) => Promise<void>;
@@ -41,7 +43,8 @@ export function registerIpc(context: IpcContext): void {
       runtime: context.getRuntime(),
       settings: {
         ui: context.getUiSettings()
-      }
+      },
+      shortcutStatus: context.getShortcutStatus()
     };
 
     return payload;
@@ -90,4 +93,8 @@ export function broadcastRuntime(window: BrowserWindow, runtime: RuntimeSnapshot
 
 export function broadcastSettings(window: BrowserWindow, ui: UiSettings): void {
   window.webContents.send("app:settings-updated", ui);
+}
+
+export function broadcastShortcutStatus(window: BrowserWindow, status: ShortcutStatus): void {
+  window.webContents.send("app:shortcut-status-updated", status);
 }

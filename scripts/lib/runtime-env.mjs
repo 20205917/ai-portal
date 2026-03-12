@@ -1,7 +1,7 @@
 import os from "node:os";
 import path from "node:path";
 
-export const COMMAND_NAMES = ["toggle", "show", "hide", "open", "status"];
+export const COMMAND_NAMES = ["toggle", "show", "hide", "open", "status", "next", "prev"];
 
 export function shouldEnableNoSandbox(env = process.env) {
   if (env.AIDC_NO_SANDBOX === "1") {

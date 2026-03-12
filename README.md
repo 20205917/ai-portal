@@ -7,7 +7,8 @@ Ubuntu 下的个人 AI 入口调度台。它提供一个与普通浏览器明确
 - Electron + TypeScript 桌面壳，当前默认适配环境为本机 `Ubuntu GNOME X11 (ubuntu-xorg)`
 - React + Vite 渲染层，左侧使用可管理的 Dock 风格图标栏，右侧内容区使用单实例内嵌 `webview`
 - 默认内置 `ChatGPT` 与 `豆包`
-- 单实例主进程 + Unix socket 命令面：`aidc toggle`、`aidc show`、`aidc hide`、`aidc open <providerId>`、`aidc status`
+- 单实例主进程 + Unix socket 命令面：`aidc toggle`、`aidc show`、`aidc hide`、`aidc open <providerId>`、`aidc status`、`aidc next`、`aidc prev`
+- `aidc status` 会返回最近一次 `toggle` 的时延摘要，便于排查“拉起慢”发生在 CLI 侧还是窗口侧
 - provider 级 `isolated-external` 回退模式，避免与普通浏览器混淆
 
 ## 快速开始
@@ -27,9 +28,15 @@ AIDC_FORCE_BUILD=1 npm run start
 开发启动后，可以在另一个终端调用：
 
 ```bash
-npx aidc toggle
-npx aidc open chatgpt
-npx aidc status
+aidc toggle
+aidc open chatgpt
+aidc status
+```
+
+如果本机 `aidc` 尚未加入 PATH，可使用：
+
+```bash
+node ./bin/aidc.mjs toggle
 ```
 
 ## 目录
@@ -72,6 +79,9 @@ npx aidc status
 ```bash
 ./scripts/install-gnome-shortcut.sh "AI 调度台切换" "<Super>a>" "aidc toggle"
 ```
+
+应用内也支持全局快捷键注册，默认 `Ctrl+Alt+Q`。  
+在 X11 下如果出现冲突，设置页会给出 GNOME 系统绑定回退命令。
 
 ## 测试
 

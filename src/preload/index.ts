@@ -5,6 +5,7 @@ import type {
   NewProviderInput,
   ProviderDefinition,
   RuntimeSnapshot,
+  ShortcutStatus,
   UiSettings,
   UiSettingsPatch
 } from "../shared/types";
@@ -39,5 +40,10 @@ contextBridge.exposeInMainWorld("aidc", {
     const subscription = (_event: unknown, payload: UiSettings) => listener(payload);
     ipcRenderer.on("app:settings-updated", subscription);
     return () => ipcRenderer.removeListener("app:settings-updated", subscription);
+  },
+  onShortcutStatusUpdated: (listener: (status: ShortcutStatus) => void) => {
+    const subscription = (_event: unknown, payload: ShortcutStatus) => listener(payload);
+    ipcRenderer.on("app:shortcut-status-updated", subscription);
+    return () => ipcRenderer.removeListener("app:shortcut-status-updated", subscription);
   }
 });

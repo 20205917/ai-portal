@@ -27,10 +27,16 @@ describe("resolveProviders", () => {
       windowBounds: { width: 1200, height: 900 },
       ui: {
         keepAliveLimit: 3,
+        backgroundResident: true,
         sidebarAutoHide: false,
         startupView: "workspace",
         loadingOverlayMode: "immediate",
-        autoFallbackOnEmbedError: false
+        autoFallbackOnEmbedError: false,
+        hotkeys: {
+          toggleWindow: "Ctrl+Alt+Q",
+          providerNext: null,
+          providerPrev: null
+        }
       },
       providerOverrides: {
         chatgpt: {
@@ -57,10 +63,16 @@ describe("resolveProviders", () => {
       windowBounds: { width: 1200, height: 900 },
       ui: {
         keepAliveLimit: 3,
+        backgroundResident: true,
         sidebarAutoHide: false,
         startupView: "workspace",
         loadingOverlayMode: "immediate",
-        autoFallbackOnEmbedError: false
+        autoFallbackOnEmbedError: false,
+        hotkeys: {
+          toggleWindow: "Ctrl+Alt+Q",
+          providerNext: null,
+          providerPrev: null
+        }
       },
       providerOverrides: {},
       customProviders: [customProvider()]

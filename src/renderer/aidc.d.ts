@@ -4,6 +4,7 @@ import type {
   NewProviderInput,
   ProviderDefinition,
   RuntimeSnapshot,
+  ShortcutStatus,
   UiSettings,
   UiSettingsPatch
 } from "../shared/types";
@@ -24,6 +25,7 @@ declare global {
       ) => () => void;
       onRuntimeUpdated: (listener: (runtime: RuntimeSnapshot) => void) => () => void;
       onSettingsUpdated: (listener: (settings: UiSettings) => void) => () => void;
+      onShortcutStatusUpdated: (listener: (status: ShortcutStatus) => void) => () => void;
     };
   }
 

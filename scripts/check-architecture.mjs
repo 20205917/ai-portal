@@ -89,7 +89,7 @@ for (const file of scriptFiles) {
   }
 }
 
-const commandLiteralPattern = /\["toggle",\s*"show",\s*"hide",\s*"open",\s*"status"\]/g;
+const commandLiteralPattern = /\["toggle",\s*"show",\s*"hide",\s*"open",\s*"status",\s*"next",\s*"prev"\]/g;
 const commandLiteralFiles = [
   "src/shared/commands.ts",
   "scripts/lib/runtime-env.mjs",

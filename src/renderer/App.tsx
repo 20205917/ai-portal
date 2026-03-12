@@ -43,6 +43,7 @@ export function App() {
     activeProviderId,
     runtime,
     uiSettings,
+    shortcutStatus,
     bootstrapError,
     setActiveProviderId
   } = useBootstrapState();
@@ -192,6 +193,7 @@ export function App() {
             <SettingsView
               providers={providers}
               uiSettings={uiSettings}
+              shortcutStatus={shortcutStatus}
               settingsError={settingsError}
               engineLabels={engineLabels}
               onUpdateUiSettings={updateUiSettings}

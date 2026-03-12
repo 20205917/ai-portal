@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 describe("AppStore", () => {
-  it("persists last provider, overrides, and custom providers", () => {
+  it("persists last provider, overrides, and custom providers", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "aidc-store-"));
     tempDirs.push(dir);
 
@@ -29,13 +29,19 @@ describe("AppStore", () => {
       sidebarAutoHide: true,
       startupView: "home",
       loadingOverlayMode: "strict",
-      autoFallbackOnEmbedError: true
+      autoFallbackOnEmbedError: true,
+      hotkeys: {
+        toggleWindow: "Ctrl+Alt+Q",
+        providerNext: "Ctrl+Alt+]",
+        providerPrev: "Ctrl+Alt+["
+      }
     });
     const custom = store.addCustomProvider({
       label: "Claude",
       url: "claude.ai",
       icon: "C"
     });
+    await store.flushPendingWrites();
 
     const reloaded = new AppStore(dir);
     const settings = reloaded.getSettings();
@@ -49,10 +55,16 @@ describe("AppStore", () => {
     expect(settings.customProviders[0].url).toBe("https://claude.ai");
     expect(settings.ui).toEqual({
       keepAliveLimit: 5,
+      backgroundResident: true,
       sidebarAutoHide: true,
       startupView: "home",
       loadingOverlayMode: "strict",
-      autoFallbackOnEmbedError: true
+      autoFallbackOnEmbedError: true,
+      hotkeys: {
+        toggleWindow: "Ctrl+Alt+Q",
+        providerNext: "Ctrl+Alt+]",
+        providerPrev: "Ctrl+Alt+["
+      }
     });
   });
 
@@ -89,16 +101,20 @@ describe("AppStore", () => {
     expect(settings.lastProviderId).toBe("chatgpt");
     expect(settings.customProviders).toEqual([]);
     expect(settings.ui.keepAliveLimit).toBe(3);
+    expect(settings.ui.backgroundResident).toBe(true);
     expect(settings.ui.sidebarAutoHide).toBe(false);
     expect(settings.ui.startupView).toBe("workspace");
     expect(settings.ui.loadingOverlayMode).toBe("immediate");
     expect(settings.ui.autoFallbackOnEmbedError).toBe(false);
+    expect(settings.ui.hotkeys.toggleWindow).toBe("Ctrl+Alt+Q");
+    expect(settings.ui.hotkeys.providerNext).toBeNull();
+    expect(settings.ui.hotkeys.providerPrev).toBeNull();
 
     const backups = fs.readdirSync(dir).filter((name) => name.startsWith("settings.backup."));
     expect(backups.length).toBe(1);
   });
 
-  it("debounces bounds/runtime writes and flushes latest state", () => {
+  it("debounces bounds/runtime writes and flushes latest state", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "aidc-store-debounce-"));
     tempDirs.push(dir);
 
@@ -118,7 +134,7 @@ describe("AppStore", () => {
         updatedAt: `2026-03-11T09:00:${String(index).padStart(2, "0")}.000Z`
       });
     }
-    store.flushPendingWrites();
+    await store.flushPendingWrites();
 
     const reloaded = new AppStore(dir);
     const settings = reloaded.getSettings();
@@ -140,7 +156,7 @@ describe("AppStore", () => {
     expect(runtime.updatedAt).toBe("2026-03-11T09:00:19.000Z");
   });
 
-  it("clamps keepalive range and persists normalized ui settings", () => {
+  it("clamps keepalive range and persists normalized ui settings", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "aidc-store-ui-"));
     tempDirs.push(dir);
 
@@ -150,20 +166,62 @@ describe("AppStore", () => {
       sidebarAutoHide: true,
       startupView: "home",
       loadingOverlayMode: "strict",
-      autoFallbackOnEmbedError: true
+      autoFallbackOnEmbedError: true,
+      hotkeys: {
+        toggleWindow: "",
+        providerNext: "Ctrl+Alt+W",
+        providerPrev: "   "
+      }
     });
-    store.flushPendingWrites();
+    await store.flushPendingWrites();
 
     const reloaded = new AppStore(dir);
     expect(reloaded.getSettings().ui).toEqual({
       keepAliveLimit: 5,
+      backgroundResident: true,
       sidebarAutoHide: true,
       startupView: "home",
       loadingOverlayMode: "strict",
-      autoFallbackOnEmbedError: true
+      autoFallbackOnEmbedError: true,
+      hotkeys: {
+        toggleWindow: "Ctrl+Alt+Q",
+        providerNext: "Ctrl+Alt+W",
+        providerPrev: null
+      }
     });
 
-    reloaded.saveUiSettings({ keepAliveLimit: 0 });
+    reloaded.saveUiSettings({ keepAliveLimit: 0, hotkeys: { providerPrev: "Ctrl+Alt+E" } });
     expect(reloaded.getSettings().ui.keepAliveLimit).toBe(1);
+    expect(reloaded.getSettings().ui.hotkeys.providerPrev).toBe("Ctrl+Alt+E");
+  });
+
+  it("backfills hotkeys for legacy ui settings without triggering reset", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "aidc-store-hotkey-compat-"));
+    tempDirs.push(dir);
+
+    fs.writeFileSync(path.join(dir, "settings.json"), JSON.stringify({
+      version: SETTINGS_VERSION,
+      startupResetDone: true,
+      lastProviderId: "chatgpt",
+      windowBounds: { width: 1200, height: 900 },
+      ui: {
+        keepAliveLimit: 3,
+        sidebarAutoHide: false,
+        startupView: "workspace",
+        loadingOverlayMode: "immediate",
+        autoFallbackOnEmbedError: false
+      },
+      providerOverrides: {},
+      customProviders: []
+    }));
+
+    const store = new AppStore(dir);
+    const settings = store.getSettings();
+    expect(settings.ui.hotkeys).toEqual({
+      toggleWindow: "Ctrl+Alt+Q",
+      providerNext: null,
+      providerPrev: null
+    });
+    expect(settings.ui.backgroundResident).toBe(true);
   });
 });

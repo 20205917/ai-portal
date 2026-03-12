@@ -98,17 +98,35 @@ function launchElectron(payload) {
 
 async function main() {
   const payload = parseArgs(process.argv.slice(2));
+  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  payload.trace = {
+    requestId,
+    clientSentAtMs: Date.now()
+  };
   const socketPath = resolveSocketPath(process.env);
 
   try {
     const response = await sendCommand(socketPath, payload);
+    if (process.env.AIDC_TIMING_LOG === "1" && payload.command === "toggle") {
+      const timing = response?.diagnostics?.lastToggle;
+      if (timing && timing.requestId === requestId) {
+        console.error(
+          `[aidc] toggle timing request=${requestId} client->server=${timing.clientToServerMs ?? -1}ms `
+          + `server=${timing.serverHandleMs}ms total=${timing.endToEndMs ?? -1}ms state=${timing.resultingState}`
+        );
+      }
+    }
     if (payload.command === "status") {
       console.log(JSON.stringify(response, null, 2));
     }
     return;
   } catch (error) {
     const code = /** @type {{ code?: string }} */ (error).code;
-    const canBoot = payload.command === "toggle" || payload.command === "show" || payload.command === "open";
+    const canBoot = payload.command === "toggle"
+      || payload.command === "show"
+      || payload.command === "open"
+      || payload.command === "next"
+      || payload.command === "prev";
 
     if (code !== "ENOENT" && code !== "ECONNREFUSED" && code !== "EPIPE") {
       throw error;

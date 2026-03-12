@@ -2,6 +2,8 @@ export type ProviderEngine = "embedded" | "isolated-external";
 export type ProviderSource = "builtin" | "custom";
 export type StartupView = "workspace" | "home";
 export type LoadingOverlayMode = "immediate" | "strict";
+export type ShortcutAction = "toggleWindow" | "providerNext" | "providerPrev";
+export type ShortcutRegistrationState = "registered" | "unbound" | "invalid" | "duplicate" | "conflict";
 
 export interface ProviderDefinition {
   id: string;
@@ -55,15 +57,47 @@ export interface HostEnvironment {
   summary: string;
 }
 
+export interface HotkeySettings {
+  toggleWindow: string;
+  providerNext: string | null;
+  providerPrev: string | null;
+}
+
+export interface HotkeySettingsPatch {
+  toggleWindow?: string;
+  providerNext?: string | null;
+  providerPrev?: string | null;
+}
+
+export interface ShortcutStatusItem {
+  action: ShortcutAction;
+  accelerator: string | null;
+  state: ShortcutRegistrationState;
+  message: string;
+  fallbackCommand?: string;
+}
+
+export type ShortcutStatus = Record<ShortcutAction, ShortcutStatusItem>;
+
 export interface UiSettings {
   keepAliveLimit: number;
+  backgroundResident: boolean;
   sidebarAutoHide: boolean;
   startupView: StartupView;
   loadingOverlayMode: LoadingOverlayMode;
   autoFallbackOnEmbedError: boolean;
+  hotkeys: HotkeySettings;
 }
 
-export type UiSettingsPatch = Partial<UiSettings>;
+export interface UiSettingsPatch {
+  keepAliveLimit?: number;
+  backgroundResident?: boolean;
+  sidebarAutoHide?: boolean;
+  startupView?: StartupView;
+  loadingOverlayMode?: LoadingOverlayMode;
+  autoFallbackOnEmbedError?: boolean;
+  hotkeys?: HotkeySettingsPatch;
+}
 
 export interface AppSettings {
   version: number;
@@ -87,4 +121,5 @@ export interface BootstrapPayload {
   settings: {
     ui: UiSettings;
   };
+  shortcutStatus: ShortcutStatus;
 }

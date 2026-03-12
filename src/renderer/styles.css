@@ -660,6 +660,108 @@ code {
   margin-top: 10px;
 }
 
+.hotkey-list {
+  display: grid;
+  gap: 12px;
+}
+
+.hotkey-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.hotkey-row:last-child {
+  border-bottom: none;
+}
+
+.hotkey-meta {
+  display: grid;
+  gap: 6px;
+}
+
+.hotkey-meta small {
+  color: var(--muted);
+}
+
+.shortcut-status {
+  width: fit-content;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+}
+
+.shortcut-status-registered {
+  border-color: rgba(34, 197, 94, 0.38);
+  color: #bbf7d0;
+}
+
+.shortcut-status-unbound {
+  border-color: rgba(148, 163, 184, 0.24);
+  color: #cbd5e1;
+}
+
+.shortcut-status-conflict,
+.shortcut-status-duplicate,
+.shortcut-status-invalid {
+  border-color: rgba(248, 113, 113, 0.36);
+  color: #fecaca;
+}
+
+.hotkey-controls {
+  display: grid;
+  gap: 8px;
+  width: min(360px, 45vw);
+}
+
+.hotkey-controls select,
+.hotkey-controls input {
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  padding: 0 10px;
+}
+
+.hotkey-controls select:focus,
+.hotkey-controls input:focus {
+  border-color: rgba(52, 211, 153, 0.42);
+  outline: none;
+}
+
+.shortcut-fallback {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.shortcut-fallback code {
+  font-size: 12px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 4px 6px;
+  border-radius: 8px;
+}
+
+.shortcut-fallback button {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.shortcut-fallback button:hover {
+  border-color: rgba(52, 211, 153, 0.42);
+  background: rgba(52, 211, 153, 0.08);
+}
+
 .description-list p,
 .shortcut-card p {
   margin: 0;
@@ -797,5 +899,13 @@ code {
   .home-status-header {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .hotkey-row {
+    flex-direction: column;
+  }
+
+  .hotkey-controls {
+    width: 100%;
   }
 }

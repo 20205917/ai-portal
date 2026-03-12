@@ -12,7 +12,9 @@ function read(target) {
 }
 
 function extractCommandList(content) {
-  const match = content.match(/\[(\s*"toggle"\s*,\s*"show"\s*,\s*"hide"\s*,\s*"open"\s*,\s*"status"\s*)\]/);
+  const match = content.match(
+    /\[(\s*"toggle"\s*,\s*"show"\s*,\s*"hide"\s*,\s*"open"\s*,\s*"status"\s*,\s*"next"\s*,\s*"prev"\s*)\]/
+  );
   if (!match) {
     return null;
   }
