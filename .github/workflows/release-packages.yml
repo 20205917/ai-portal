@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   create-release:
@@ -57,6 +58,7 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_path }}
           if-no-files-found: error
+          retention-days: 1
 
       - name: Attach assets to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -64,3 +66,87 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           files: ${{ matrix.artifact_path }}
+
+  cleanup-history:
+    needs: build-packages
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Keep only latest release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            function compareSemverTag(leftTag, rightTag) {
+              const left = leftTag.replace(/^v/, "").split(".").map((item) => Number.parseInt(item, 10) || 0);
+              const right = rightTag.replace(/^v/, "").split(".").map((item) => Number.parseInt(item, 10) || 0);
+              const length = Math.max(left.length, right.length);
+              for (let index = 0; index < length; index += 1) {
+                const leftPart = left[index] ?? 0;
+                const rightPart = right[index] ?? 0;
+                if (leftPart > rightPart) {
+                  return 1;
+                }
+                if (leftPart < rightPart) {
+                  return -1;
+                }
+              }
+              return 0;
+            }
+            const releases = await github.paginate(github.rest.repos.listReleases, {
+              owner,
+              repo,
+              per_page: 100,
+            });
+            const versionReleases = releases
+              .filter((release) => /^v\d/.test(release.tag_name))
+              .sort((a, b) => compareSemverTag(b.tag_name, a.tag_name));
+            if (versionReleases.length <= 1) {
+              core.info("No old release to clean.");
+              return;
+            }
+            const latest = versionReleases[0];
+            core.info(`Keeping release ${latest.tag_name}`);
+            for (const release of versionReleases.slice(1)) {
+              core.info(`Deleting old release ${release.tag_name}`);
+              await github.rest.repos.deleteRelease({
+                owner,
+                repo,
+                release_id: release.id,
+              });
+            }
+
+      - name: Keep only latest workflow artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const artifacts = await github.paginate(github.rest.actions.listArtifactsForRepo, {
+              owner,
+              repo,
+              per_page: 100,
+            });
+            const packageArtifacts = artifacts
+              .filter((artifact) => ["aidc-deb", "aidc-exe"].includes(artifact.name))
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            const keepArtifactIds = new Set();
+            for (const name of ["aidc-deb", "aidc-exe"]) {
+              const latest = packageArtifacts.find((artifact) => artifact.name === name);
+              if (latest) {
+                keepArtifactIds.add(latest.id);
+                core.info(`Keeping artifact ${name} (${latest.id})`);
+              }
+            }
+            for (const artifact of packageArtifacts) {
+              if (keepArtifactIds.has(artifact.id)) {
+                continue;
+              }
+              core.info(`Deleting old artifact ${artifact.name} (${artifact.id})`);
+              await github.rest.actions.deleteArtifact({
+                owner,
+                repo,
+                artifact_id: artifact.id,
+              });
+            }

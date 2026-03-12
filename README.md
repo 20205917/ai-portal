@@ -15,21 +15,22 @@ AIProtal 是一个面向 Linux / Windows 的 AI 入口调度台。
 
 发布版本统一使用 GitHub Release，版本号格式为 `vX.Y.Z`（例如 `v1.0.0`）。
 
-- 下载入口：仓库 `Releases` 页面
-- Linux：下载 `.deb`
-- Windows：下载 `.exe`（NSIS 安装包）
+- 最新版本下载页：[Latest Release](https://github.com/20205917/ai-portal/releases/latest)
+- 历史版本下载页：[Releases](https://github.com/20205917/ai-portal/releases)
+- Linux `.deb` 直链模板（将 `<version>` 替换为版本号，如 `1.0.2`）：`https://github.com/20205917/ai-portal/releases/download/v<version>/AIProtal-<version>-linux-amd64.deb`
+- Windows `.exe` 直链模板（将 `<version>` 替换为版本号，如 `1.0.2`）：`https://github.com/20205917/ai-portal/releases/download/v<version>/AIProtal-<version>-win-x64.exe`
 
 ### Linux (`.deb`) 安装
 
 ```bash
-sudo dpkg -i AIProtal-<version>-linux-x64.deb
+sudo dpkg -i AIProtal-<version>-linux-amd64.deb
 # 若出现依赖问题
 sudo apt-get -f install
 ```
 
 ### Windows (`.exe`) 安装
 
-1. 双击 `AIProtal-<version>-windows-x64.exe`
+1. 双击 `AIProtal-<version>-win-x64.exe`
 2. 按安装向导完成安装
 3. 从开始菜单启动 `AIProtal`
 
