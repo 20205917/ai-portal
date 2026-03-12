@@ -13,6 +13,7 @@ files:
 asar: true
 
 linux:
+  maintainer: "zhangyj <zhangyj@yimucn.com>"
   target:
     - target: deb
       arch:
