@@ -191,7 +191,7 @@ describe("AppStore", () => {
     });
 
     reloaded.saveUiSettings({ keepAliveLimit: 0, hotkeys: { providerPrev: "Ctrl+Alt+E" } });
-    expect(reloaded.getSettings().ui.keepAliveLimit).toBe(1);
+    expect(reloaded.getSettings().ui.keepAliveLimit).toBe(0);
     expect(reloaded.getSettings().ui.hotkeys.providerPrev).toBe("Ctrl+Alt+E");
   });
 

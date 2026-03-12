@@ -70,6 +70,10 @@ export function WorkspaceView(props: WorkspaceViewProps) {
     }
     return embeddedProviders.filter((provider) => retainedIds.has(provider.id));
   }, [activeEmbeddedProviderId, embeddedProviders, retainedEmbeddedProviderIds]);
+  const cachedEmbeddedProviderIds = useMemo(
+    () => retainedEmbeddedProviderIds.filter((providerId) => providerId !== activeEmbeddedProviderId),
+    [activeEmbeddedProviderId, retainedEmbeddedProviderIds]
+  );
   const shouldShowLoadingOverlay = Boolean(
     activeEmbeddedProvider
     && (loadingOverlayMode === "immediate"
@@ -79,8 +83,8 @@ export function WorkspaceView(props: WorkspaceViewProps) {
   const hideActiveWebviewForLoading = loadingOverlayMode === "immediate" && shouldShowLoadingOverlay;
 
   useEffect(() => {
-    onEmbeddedCacheChanged(mountedEmbeddedProviders.map((provider) => provider.id));
-  }, [mountedEmbeddedProviders, onEmbeddedCacheChanged]);
+    onEmbeddedCacheChanged(cachedEmbeddedProviderIds);
+  }, [cachedEmbeddedProviderIds, onEmbeddedCacheChanged]);
 
   return (
     <section className={`workspace-content workspace-content-full ${visible ? "" : "is-hidden"}`}>

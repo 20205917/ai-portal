@@ -570,6 +570,11 @@ code {
   font-size: 15px;
 }
 
+.status-card small {
+  font-size: 11px;
+  color: var(--muted);
+}
+
 .home-card {
   display: flex;
   align-items: center;

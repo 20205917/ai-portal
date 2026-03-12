@@ -53,6 +53,17 @@ export interface RuntimeSnapshot {
 export interface SystemMetricsSnapshot {
   cpuPercent: number;
   memoryMb: number;
+  privateMemoryMb: number;
+  privateMemorySupported: boolean;
+  processCount: number;
+  memoryByProcessType: {
+    browserMb: number;
+    gpuMb: number;
+    tabMb: number;
+    networkServiceMb: number;
+    utilityMb: number;
+    otherMb: number;
+  };
   updatedAt: string;
 }
 

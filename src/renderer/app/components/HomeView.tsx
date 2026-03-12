@@ -94,8 +94,32 @@ export function HomeView(props: HomeViewProps) {
             <strong>{systemMetrics.cpuPercent.toFixed(1)}%</strong>
           </article>
           <article className="status-card">
-            <span>内存</span>
+            <span className="status-label-row">
+              <span>总内存</span>
+              <InfoTip label="查看内存口径与明细">
+                <ul className="info-tip-list">
+                  <li>总内存：{systemMetrics.memoryMb.toFixed(1)} MB（应用全部进程工作集）</li>
+                  {systemMetrics.privateMemorySupported ? (
+                    <li>私有内存：{systemMetrics.privateMemoryMb.toFixed(1)} MB（更接近真实独占）</li>
+                  ) : (
+                    <li>私有内存：当前平台未提供该口径，已隐藏。</li>
+                  )}
+                  <li>Browser：{systemMetrics.memoryByProcessType.browserMb.toFixed(1)} MB</li>
+                  <li>GPU：{systemMetrics.memoryByProcessType.gpuMb.toFixed(1)} MB</li>
+                  <li>Tab：{systemMetrics.memoryByProcessType.tabMb.toFixed(1)} MB</li>
+                  <li>Network：{systemMetrics.memoryByProcessType.networkServiceMb.toFixed(1)} MB</li>
+                  <li>Utility：{systemMetrics.memoryByProcessType.utilityMb.toFixed(1)} MB</li>
+                  <li>Other：{systemMetrics.memoryByProcessType.otherMb.toFixed(1)} MB</li>
+                  <li>进程数：{systemMetrics.processCount}</li>
+                </ul>
+              </InfoTip>
+            </span>
             <strong>{systemMetrics.memoryMb.toFixed(1)} MB</strong>
+            <small>
+              {systemMetrics.privateMemorySupported
+                ? `私有 ${systemMetrics.privateMemoryMb.toFixed(1)} MB`
+                : "私有口径当前平台不可用"}
+            </small>
           </article>
           <article className="status-card">
             <span className="status-label-row">
@@ -103,6 +127,7 @@ export function HomeView(props: HomeViewProps) {
               <InfoTip label="查看缓存服务详情">
                 <ul className="info-tip-list">
                   <li>当前缓存：{cachedEmbeddedProviders.length} / {uiSettings.keepAliveLimit}</li>
+                  <li>仅统计保活缓存，不包含当前正在展示的服务。</li>
                   {cachedEmbeddedProviders.length > 0 ? (
                     cachedEmbeddedProviders.map((provider) => (
                       <li key={provider.id}>{provider.label}</li>
