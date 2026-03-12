@@ -25,6 +25,13 @@ describe("resolveProviders", () => {
       startupResetDone: true,
       lastProviderId: "chatgpt",
       windowBounds: { width: 1200, height: 900 },
+      ui: {
+        keepAliveLimit: 3,
+        sidebarAutoHide: false,
+        startupView: "workspace",
+        loadingOverlayMode: "immediate",
+        autoFallbackOnEmbedError: false
+      },
       providerOverrides: {
         chatgpt: {
           engine: "isolated-external",
@@ -48,6 +55,13 @@ describe("resolveProviders", () => {
       startupResetDone: true,
       lastProviderId: "chatgpt",
       windowBounds: { width: 1200, height: 900 },
+      ui: {
+        keepAliveLimit: 3,
+        sidebarAutoHide: false,
+        startupView: "workspace",
+        loadingOverlayMode: "immediate",
+        autoFallbackOnEmbedError: false
+      },
       providerOverrides: {},
       customProviders: [customProvider()]
     };

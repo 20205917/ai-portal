@@ -3,7 +3,9 @@ import type {
   BootstrapPayload,
   NewProviderInput,
   ProviderDefinition,
-  RuntimeSnapshot
+  RuntimeSnapshot,
+  UiSettings,
+  UiSettingsPatch
 } from "../shared/types";
 
 declare global {
@@ -11,6 +13,7 @@ declare global {
     aidc: {
       getBootstrap: () => Promise<BootstrapPayload>;
       selectProvider: (providerId: string) => Promise<void>;
+      updateUiSettings: (patch: UiSettingsPatch) => Promise<void>;
       setProviderEngine: (providerId: string, engine: ProviderDefinition["engine"]) => Promise<void>;
       setProviderEnabled: (providerId: string, enabled: boolean) => Promise<void>;
       createProvider: (input: NewProviderInput) => Promise<void>;
@@ -20,6 +23,7 @@ declare global {
         listener: (payload: { providers: ProviderDefinition[]; activeProviderId: string }) => void
       ) => () => void;
       onRuntimeUpdated: (listener: (runtime: RuntimeSnapshot) => void) => () => void;
+      onSettingsUpdated: (listener: (settings: UiSettings) => void) => () => void;
     };
   }
 

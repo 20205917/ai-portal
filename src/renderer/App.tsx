@@ -1,11 +1,13 @@
-import { FormEvent, useMemo, useState } from "react";
-
-import type { NewProviderInput, ProviderDefinition, RuntimeSnapshot } from "../shared/types";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import type { NewProviderInput, ProviderDefinition, RuntimeSnapshot, UiSettingsPatch } from "../shared/types";
+import { FatalView, LoadingView } from "./app/components/BootViews";
 import { HomeView } from "./app/components/HomeView";
 import { SettingsView } from "./app/components/SettingsView";
 import { Sidebar } from "./app/components/Sidebar";
 import { WorkspaceView } from "./app/components/WorkspaceView";
+import { useEmbeddedAutoFallback } from "./app/hooks/useEmbeddedAutoFallback";
 import { useBootstrapState } from "./app/hooks/useBootstrapState";
+import { useSidebarAutoHide } from "./app/hooks/useSidebarAutoHide";
 import { useWebviewLifecycle } from "./app/hooks/useWebviewLifecycle";
 import type { View } from "./app/types";
 
@@ -27,44 +29,20 @@ const emptyForm: NewProviderInput = {
   icon: ""
 };
 
-function LoadingView() {
-  return (
-    <div className="loading-shell">
-      <div className="loading-card">
-        <span className="eyebrow">AIDC</span>
-        <h1>正在启动 AI 调度台</h1>
-        <p>正在恢复专用窗口与上次使用的服务，请稍候。</p>
-      </div>
-    </div>
-  );
-}
-
-function FatalView(props: { title: string; message: string }) {
-  return (
-    <div className="loading-shell">
-      <div className="loading-card">
-        <span className="eyebrow">AIDC</span>
-        <h1>{props.title}</h1>
-        <p>{props.message}</p>
-        <button type="button" className="primary-action" onClick={() => window.location.reload()}>
-          重新加载
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export function App() {
   const [view, setView] = useState<View>("workspace");
   const [form, setForm] = useState<NewProviderInput>(emptyForm);
   const [formError, setFormError] = useState("");
   const [formBusy, setFormBusy] = useState(false);
+  const [settingsError, setSettingsError] = useState("");
+  const startupViewAppliedRef = useRef(false);
   const {
     loading,
     bootstrap,
     providers,
     activeProviderId,
     runtime,
+    uiSettings,
     bootstrapError,
     setActiveProviderId
   } = useBootstrapState();
@@ -75,6 +53,7 @@ export function App() {
     () => visibleProviders.filter((provider) => provider.engine === "embedded"),
     [visibleProviders]
   );
+  const sidebarAutoHideActive = uiSettings.sidebarAutoHide && view === "workspace";
   const activeEmbeddedProvider =
     view === "workspace" && activeProvider?.engine === "embedded" ? activeProvider : null;
   const {
@@ -83,6 +62,29 @@ export function App() {
     bindWebviewNode,
     retryEmbeddedPage
   } = useWebviewLifecycle(activeEmbeddedProvider);
+  const {
+    collapsed: sidebarCollapsed,
+    onSidebarExpand,
+    onSidebarCollapse
+  } = useSidebarAutoHide(sidebarAutoHideActive);
+
+  useEffect(() => {
+    if (!bootstrap || startupViewAppliedRef.current) {
+      return;
+    }
+    startupViewAppliedRef.current = true;
+    setView(bootstrap.settings?.ui?.startupView ?? "workspace");
+  }, [bootstrap]);
+  useEmbeddedAutoFallback(uiSettings.autoFallbackOnEmbedError, webviewState, activeEmbeddedProvider);
+
+  async function updateUiSettings(patch: UiSettingsPatch): Promise<void> {
+    setSettingsError("");
+    try {
+      await window.aidc.updateUiSettings(patch);
+    } catch (error) {
+      setSettingsError(error instanceof Error ? error.message : "更新设置失败。");
+    }
+  }
 
   async function openProvider(providerId: string) {
     setView("workspace");
@@ -149,13 +151,19 @@ export function App() {
   return (
     <div className="app-frame">
       <div className="window-drag-region" aria-hidden="true" />
-      <div className="app-shell">
+      <div
+        className={`app-shell ${sidebarAutoHideActive ? "is-sidebar-autohide" : ""} ${sidebarCollapsed ? "is-sidebar-collapsed" : ""}`}
+      >
         <Sidebar
           view={view}
           runtime={runtime}
           runtimeLabel={runtimeLabels[runtime.state]}
           visibleProviders={visibleProviders}
           activeProviderId={activeProviderId}
+          autoHideEnabled={sidebarAutoHideActive}
+          collapsed={sidebarCollapsed}
+          onSidebarExpand={onSidebarExpand}
+          onSidebarCollapse={onSidebarCollapse}
           onOpenProvider={openProvider}
           onSetView={setView}
         />
@@ -165,11 +173,15 @@ export function App() {
             <HomeView
               providers={providers}
               visibleProviders={visibleProviders}
+              activeProvider={activeProvider}
+              runtime={runtime}
+              uiSettings={uiSettings}
               form={form}
               formBusy={formBusy}
               formError={formError}
               setForm={setForm}
               onOpenProvider={openProvider}
+              onOpenSettings={() => setView("settings")}
               onToggleProviderVisibility={toggleProviderVisibility}
               onRemoveProvider={removeProvider}
               onCreateProvider={handleCreateProvider}
@@ -179,7 +191,10 @@ export function App() {
           {view === "settings" ? (
             <SettingsView
               providers={providers}
+              uiSettings={uiSettings}
+              settingsError={settingsError}
               engineLabels={engineLabels}
+              onUpdateUiSettings={updateUiSettings}
               onSetProviderEngine={(providerId, engine) => window.aidc.setProviderEngine(providerId, engine)}
             />
           ) : null}
@@ -189,6 +204,8 @@ export function App() {
             activeProvider={activeProvider}
             activeEmbeddedProvider={activeEmbeddedProvider}
             embeddedProviders={embeddedProviders}
+            keepAliveLimit={uiSettings.keepAliveLimit}
+            loadingOverlayMode={uiSettings.loadingOverlayMode}
             webviewState={webviewState}
             webviewError={webviewError}
             bindWebviewNode={bindWebviewNode}

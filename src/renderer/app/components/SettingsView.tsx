@@ -1,37 +1,132 @@
-import type { ProviderDefinition } from "../../../shared/types";
+import type { ChangeEvent } from "react";
+
+import { UI_KEEP_ALIVE_MAX, UI_KEEP_ALIVE_MIN } from "../../../shared/constants";
+import type {
+  ProviderDefinition,
+  UiSettings,
+  UiSettingsPatch
+} from "../../../shared/types";
 
 interface SettingsViewProps {
   providers: ProviderDefinition[];
+  uiSettings: UiSettings;
+  settingsError: string;
   engineLabels: Record<ProviderDefinition["engine"], string>;
+  onUpdateUiSettings: (patch: UiSettingsPatch) => Promise<void>;
   onSetProviderEngine: (providerId: string, engine: ProviderDefinition["engine"]) => Promise<void>;
 }
 
 export function SettingsView(props: SettingsViewProps) {
-  const { providers, engineLabels, onSetProviderEngine } = props;
+  const {
+    providers,
+    uiSettings,
+    settingsError,
+    engineLabels,
+    onUpdateUiSettings,
+    onSetProviderEngine
+  } = props;
+
+  function setKeepAlive(event: ChangeEvent<HTMLInputElement>): void {
+    const keepAliveLimit = Number.parseInt(event.target.value, 10);
+    void onUpdateUiSettings({ keepAliveLimit });
+  }
+
+  function setStartupView(startupView: UiSettings["startupView"]): void {
+    if (startupView === uiSettings.startupView) {
+      return;
+    }
+    void onUpdateUiSettings({ startupView });
+  }
+
+  function setLoadingOverlayMode(loadingOverlayMode: UiSettings["loadingOverlayMode"]): void {
+    if (loadingOverlayMode === uiSettings.loadingOverlayMode) {
+      return;
+    }
+    void onUpdateUiSettings({ loadingOverlayMode });
+  }
 
   return (
     <section className="settings-shell">
       <section className="settings-grid">
         <article className="panel">
-          <h3>功能说明</h3>
-          <div className="description-list">
-            <p>首页负责添加、删除和管理左侧栏 AI 网页。</p>
-            <p>左侧图标点击后会直接切换到对应 AI 页面。</p>
-            <p>当某个站点内嵌兼容性不稳定时，可以切到独立回退窗。</p>
+          <h3>性能与保活</h3>
+          <p>控制 webview 缓存上限，平衡切换速度与内存占用。</p>
+          <label className="range-field">
+            <span>保活数量：{uiSettings.keepAliveLimit}</span>
+            <input
+              type="range"
+              min={UI_KEEP_ALIVE_MIN}
+              max={UI_KEEP_ALIVE_MAX}
+              step={1}
+              value={uiSettings.keepAliveLimit}
+              onChange={setKeepAlive}
+            />
+            <small>{UI_KEEP_ALIVE_MIN} 表示最省内存，{UI_KEEP_ALIVE_MAX} 表示切换更快。</small>
+          </label>
+        </article>
+
+        <article className="panel">
+          <h3>窗口与侧栏</h3>
+          <p>侧栏自动隐藏只在工作区生效，首页和设置页保持固定显示。</p>
+          <label className="toggle-row">
+            <span>侧栏自动隐藏（X11 优先策略）</span>
+            <input
+              type="checkbox"
+              checked={uiSettings.sidebarAutoHide}
+              onChange={(event) => void onUpdateUiSettings({ sidebarAutoHide: event.target.checked })}
+            />
+          </label>
+          <div className="mode-group">
+            <span>默认启动页面</span>
+            <div className="segment-control">
+              <button
+                type="button"
+                className={uiSettings.startupView === "workspace" ? "is-active" : ""}
+                onClick={() => setStartupView("workspace")}
+              >
+                工作区
+              </button>
+              <button
+                type="button"
+                className={uiSettings.startupView === "home" ? "is-active" : ""}
+                onClick={() => setStartupView("home")}
+              >
+                首页
+              </button>
+            </div>
           </div>
         </article>
 
         <article className="panel">
-          <h3>快捷键绑定</h3>
-          <div className="shortcut-card">
-            <strong>推荐快捷键</strong>
-            <p>
-              <code>Super + A</code>：拉起、聚焦或隐藏 AI 调度台
-            </p>
-            <p>
-              在 Ubuntu 的“设置 - 键盘 - 自定义快捷键”中，把命令设为 <code>aidc toggle</code>。
-            </p>
+          <h3>加载与兼容</h3>
+          <p>优先保证首帧稳定反馈，必要时可自动回退独立窗口。</p>
+          <div className="mode-group">
+            <span>加载策略</span>
+            <div className="segment-control">
+              <button
+                type="button"
+                className={uiSettings.loadingOverlayMode === "immediate" ? "is-active" : ""}
+                onClick={() => setLoadingOverlayMode("immediate")}
+              >
+                即时遮罩
+              </button>
+              <button
+                type="button"
+                className={uiSettings.loadingOverlayMode === "strict" ? "is-active" : ""}
+                onClick={() => setLoadingOverlayMode("strict")}
+              >
+                严格检测
+              </button>
+            </div>
           </div>
+          <label className="toggle-row">
+            <span>内嵌失败时自动回退独立窗口</span>
+            <input
+              type="checkbox"
+              checked={uiSettings.autoFallbackOnEmbedError}
+              onChange={(event) => void onUpdateUiSettings({ autoFallbackOnEmbedError: event.target.checked })}
+            />
+          </label>
         </article>
 
         <article className="panel settings-wide">
@@ -66,6 +161,7 @@ export function SettingsView(props: SettingsViewProps) {
               );
             })}
           </div>
+          {settingsError ? <p className="form-error settings-error">{settingsError}</p> : null}
         </article>
       </section>
     </section>

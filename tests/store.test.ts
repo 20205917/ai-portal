@@ -24,6 +24,13 @@ describe("AppStore", () => {
     store.saveLastProviderId("doubao");
     store.saveProviderEngine("chatgpt", "isolated-external");
     store.saveProviderIconDataUrl("chatgpt", "data:image/png;base64,AA==");
+    store.saveUiSettings({
+      keepAliveLimit: 5,
+      sidebarAutoHide: true,
+      startupView: "home",
+      loadingOverlayMode: "strict",
+      autoFallbackOnEmbedError: true
+    });
     const custom = store.addCustomProvider({
       label: "Claude",
       url: "claude.ai",
@@ -40,6 +47,13 @@ describe("AppStore", () => {
     expect(settings.providerOverrides.chatgpt.iconDataUrl).toBe("data:image/png;base64,AA==");
     expect(settings.customProviders[0].id).toBe(custom.id);
     expect(settings.customProviders[0].url).toBe("https://claude.ai");
+    expect(settings.ui).toEqual({
+      keepAliveLimit: 5,
+      sidebarAutoHide: true,
+      startupView: "home",
+      loadingOverlayMode: "strict",
+      autoFallbackOnEmbedError: true
+    });
   });
 
   it("backs up and resets legacy settings on first startup", () => {
@@ -74,6 +88,11 @@ describe("AppStore", () => {
     expect(settings.startupResetDone).toBe(true);
     expect(settings.lastProviderId).toBe("chatgpt");
     expect(settings.customProviders).toEqual([]);
+    expect(settings.ui.keepAliveLimit).toBe(3);
+    expect(settings.ui.sidebarAutoHide).toBe(false);
+    expect(settings.ui.startupView).toBe("workspace");
+    expect(settings.ui.loadingOverlayMode).toBe("immediate");
+    expect(settings.ui.autoFallbackOnEmbedError).toBe(false);
 
     const backups = fs.readdirSync(dir).filter((name) => name.startsWith("settings.backup."));
     expect(backups.length).toBe(1);
@@ -119,5 +138,32 @@ describe("AppStore", () => {
     expect(runtime.state).toBe("visible-focused");
     expect(runtime.activeProviderId).toBe("chatgpt");
     expect(runtime.updatedAt).toBe("2026-03-11T09:00:19.000Z");
+  });
+
+  it("clamps keepalive range and persists normalized ui settings", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "aidc-store-ui-"));
+    tempDirs.push(dir);
+
+    const store = new AppStore(dir);
+    store.saveUiSettings({
+      keepAliveLimit: 99,
+      sidebarAutoHide: true,
+      startupView: "home",
+      loadingOverlayMode: "strict",
+      autoFallbackOnEmbedError: true
+    });
+    store.flushPendingWrites();
+
+    const reloaded = new AppStore(dir);
+    expect(reloaded.getSettings().ui).toEqual({
+      keepAliveLimit: 5,
+      sidebarAutoHide: true,
+      startupView: "home",
+      loadingOverlayMode: "strict",
+      autoFallbackOnEmbedError: true
+    });
+
+    reloaded.saveUiSettings({ keepAliveLimit: 0 });
+    expect(reloaded.getSettings().ui.keepAliveLimit).toBe(1);
   });
 });

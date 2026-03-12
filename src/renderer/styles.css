@@ -10,6 +10,8 @@
   --muted: #8aa0a6;
   --danger: #fb7185;
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
+  --sidebar-expanded-width: 62px;
+  --sidebar-collapsed-width: 14px;
 }
 
 * {
@@ -82,9 +84,18 @@ code {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 62px 1fr;
+  grid-template-columns: var(--sidebar-expanded-width) 1fr;
   gap: 6px;
   height: 100%;
+  transition: grid-template-columns 180ms ease, gap 180ms ease;
+}
+
+.app-shell.is-sidebar-autohide {
+  gap: 0;
+}
+
+.app-shell.is-sidebar-autohide.is-sidebar-collapsed {
+  grid-template-columns: var(--sidebar-collapsed-width) 1fr;
 }
 
 .app-frame {
@@ -114,6 +125,31 @@ code {
   align-items: center;
   padding: 7px 5px;
   border-radius: var(--outer-radius) 0 0 var(--outer-radius);
+  overflow: hidden;
+  transition: padding 180ms ease;
+}
+
+.sidebar-content {
+  width: 100%;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.sidebar.is-collapsed {
+  padding: 8px 2px;
+}
+
+.sidebar.is-collapsed .sidebar-content {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-10px);
+}
+
+.sidebar.is-collapsed::before {
+  content: "";
+  width: 3px;
+  height: 48px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.56), rgba(245, 158, 11, 0.2));
 }
 
 .workspace {
@@ -340,6 +376,11 @@ code {
   display: none;
 }
 
+.provider-webview.is-loading-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .webview-overlay {
   position: absolute;
   inset: 0;
@@ -424,7 +465,23 @@ code {
   border-radius: 18px;
 }
 
+.home-status-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.home-status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
 .home-panel h2 {
+  margin: 0 0 8px;
+}
+
+.home-panel h3 {
   margin: 0 0 8px;
 }
 
@@ -445,6 +502,30 @@ code {
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 10px;
   margin-top: 14px;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.status-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.status-card span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.status-card strong {
+  font-size: 15px;
 }
 
 .home-card {
@@ -468,6 +549,21 @@ code {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.home-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  font-style: normal;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  color: rgba(226, 232, 240, 0.92);
 }
 
 .home-card-text strong,
@@ -500,6 +596,68 @@ code {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.range-field,
+.mode-group {
+  display: grid;
+  gap: 8px;
+}
+
+.range-field input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.range-field small {
+  color: var(--muted);
+}
+
+.mode-group > span {
+  color: var(--muted);
+}
+
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.toggle-row input {
+  width: 18px;
+  height: 18px;
+}
+
+.segment-control {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.segment-control button {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-weight: 600;
+  transition: 140ms ease;
+}
+
+.segment-control button.is-active {
+  color: #f8fafc;
+  border-color: rgba(52, 211, 153, 0.38);
+  background: rgba(52, 211, 153, 0.14);
+}
+
+.settings-error {
+  margin-top: 10px;
 }
 
 .description-list p,
@@ -610,8 +768,12 @@ code {
 }
 
 @media (max-width: 1100px) {
+  :root {
+    --sidebar-expanded-width: 56px;
+  }
+
   .app-shell {
-    grid-template-columns: 56px 1fr;
+    grid-template-columns: var(--sidebar-expanded-width) 1fr;
   }
 
   .dock-home,
@@ -630,5 +792,10 @@ code {
   .home-split,
   .settings-grid {
     grid-template-columns: 1fr;
+  }
+
+  .home-status-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

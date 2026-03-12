@@ -6,7 +6,9 @@ import type {
   HostEnvironment,
   NewProviderInput,
   ProviderDefinition,
-  RuntimeSnapshot
+  RuntimeSnapshot,
+  UiSettings,
+  UiSettingsPatch
 } from "../shared/types";
 
 interface IpcContext {
@@ -16,7 +18,9 @@ interface IpcContext {
   getConfigDir: () => string;
   getSocketPath: () => string;
   getEnvironment: () => HostEnvironment;
+  getUiSettings: () => UiSettings;
   selectProvider: (providerId: string) => Promise<void>;
+  updateUiSettings: (patch: UiSettingsPatch) => Promise<void>;
   setProviderEngine: (providerId: string, engine: ProviderDefinition["engine"]) => Promise<void>;
   setProviderEnabled: (providerId: string, enabled: boolean) => Promise<void>;
   createProvider: (input: NewProviderInput) => Promise<void>;
@@ -34,7 +38,10 @@ export function registerIpc(context: IpcContext): void {
       environment: context.getEnvironment(),
       providers: context.getProviders(),
       activeProviderId: context.getActiveProviderId(),
-      runtime: context.getRuntime()
+      runtime: context.getRuntime(),
+      settings: {
+        ui: context.getUiSettings()
+      }
     };
 
     return payload;
@@ -42,6 +49,10 @@ export function registerIpc(context: IpcContext): void {
 
   ipcMain.handle("app:select-provider", async (_event, providerId: string) => {
     await context.selectProvider(providerId);
+  });
+
+  ipcMain.handle("app:update-ui-settings", async (_event, patch: UiSettingsPatch) => {
+    await context.updateUiSettings(patch);
   });
 
   ipcMain.handle("app:set-provider-engine", async (_event, providerId: string, engine: ProviderDefinition["engine"]) => {
@@ -75,4 +86,8 @@ export function broadcastProviders(window: BrowserWindow, providers: ProviderDef
 
 export function broadcastRuntime(window: BrowserWindow, runtime: RuntimeSnapshot): void {
   window.webContents.send("app:runtime-updated", runtime);
+}
+
+export function broadcastSettings(window: BrowserWindow, ui: UiSettings): void {
+  window.webContents.send("app:settings-updated", ui);
 }

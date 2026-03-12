@@ -9,6 +9,10 @@ interface SidebarProps {
   runtimeLabel: string;
   visibleProviders: ProviderDefinition[];
   activeProviderId: string;
+  autoHideEnabled: boolean;
+  collapsed: boolean;
+  onSidebarExpand: () => void;
+  onSidebarCollapse: () => void;
   onOpenProvider: (providerId: string) => Promise<void>;
   onSetView: (view: View) => void;
 }
@@ -20,13 +24,27 @@ export function Sidebar(props: SidebarProps) {
     runtimeLabel,
     visibleProviders,
     activeProviderId,
+    autoHideEnabled,
+    collapsed,
+    onSidebarExpand,
+    onSidebarCollapse,
     onOpenProvider,
     onSetView
   } = props;
 
   return (
-    <aside className="sidebar">
-      <div className="dock-top">
+    <aside
+      className={`sidebar ${autoHideEnabled ? "is-auto-hide" : ""} ${collapsed ? "is-collapsed" : ""}`}
+      onMouseEnter={onSidebarExpand}
+      onMouseLeave={onSidebarCollapse}
+      onFocusCapture={onSidebarExpand}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          onSidebarCollapse();
+        }
+      }}
+    >
+      <div className="sidebar-content dock-top">
         <button
           type="button"
           className={`dock-home ${view === "home" ? "is-selected" : ""}`}
@@ -64,7 +82,7 @@ export function Sidebar(props: SidebarProps) {
         </nav>
       </div>
 
-      <div className="sidebar-footer">
+      <div className="sidebar-content sidebar-footer">
         <div
           className={`runtime-chip runtime-${runtime.state}`}
           title={`窗口状态：${runtimeLabel}`}

@@ -1,5 +1,7 @@
 export type ProviderEngine = "embedded" | "isolated-external";
 export type ProviderSource = "builtin" | "custom";
+export type StartupView = "workspace" | "home";
+export type LoadingOverlayMode = "immediate" | "strict";
 
 export interface ProviderDefinition {
   id: string;
@@ -53,11 +55,22 @@ export interface HostEnvironment {
   summary: string;
 }
 
+export interface UiSettings {
+  keepAliveLimit: number;
+  sidebarAutoHide: boolean;
+  startupView: StartupView;
+  loadingOverlayMode: LoadingOverlayMode;
+  autoFallbackOnEmbedError: boolean;
+}
+
+export type UiSettingsPatch = Partial<UiSettings>;
+
 export interface AppSettings {
   version: number;
   startupResetDone: boolean;
   lastProviderId: string;
   windowBounds: WindowBounds;
+  ui: UiSettings;
   providerOverrides: Record<string, ProviderOverrides>;
   customProviders: ProviderDefinition[];
 }
@@ -71,4 +84,7 @@ export interface BootstrapPayload {
   providers: ProviderDefinition[];
   activeProviderId: string;
   runtime: RuntimeSnapshot;
+  settings: {
+    ui: UiSettings;
+  };
 }

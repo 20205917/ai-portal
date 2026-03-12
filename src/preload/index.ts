@@ -4,12 +4,16 @@ import type {
   BootstrapPayload,
   NewProviderInput,
   ProviderDefinition,
-  RuntimeSnapshot
+  RuntimeSnapshot,
+  UiSettings,
+  UiSettingsPatch
 } from "../shared/types";
 
 contextBridge.exposeInMainWorld("aidc", {
   getBootstrap: (): Promise<BootstrapPayload> => ipcRenderer.invoke("app:get-bootstrap"),
   selectProvider: (providerId: string): Promise<void> => ipcRenderer.invoke("app:select-provider", providerId),
+  updateUiSettings: (patch: UiSettingsPatch): Promise<void> =>
+    ipcRenderer.invoke("app:update-ui-settings", patch),
   setProviderEngine: (providerId: string, engine: ProviderDefinition["engine"]): Promise<void> =>
     ipcRenderer.invoke("app:set-provider-engine", providerId, engine),
   setProviderEnabled: (providerId: string, enabled: boolean): Promise<void> =>
@@ -30,5 +34,10 @@ contextBridge.exposeInMainWorld("aidc", {
     const subscription = (_event: unknown, payload: RuntimeSnapshot) => listener(payload);
     ipcRenderer.on("app:runtime-updated", subscription);
     return () => ipcRenderer.removeListener("app:runtime-updated", subscription);
+  },
+  onSettingsUpdated: (listener: (settings: UiSettings) => void) => {
+    const subscription = (_event: unknown, payload: UiSettings) => listener(payload);
+    ipcRenderer.on("app:settings-updated", subscription);
+    return () => ipcRenderer.removeListener("app:settings-updated", subscription);
   }
 });

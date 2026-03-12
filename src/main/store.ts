@@ -7,11 +7,13 @@ import type {
   NewProviderInput,
   ProviderDefinition,
   RuntimeSnapshot,
+  UiSettingsPatch,
   WindowBounds
 } from "../shared/types";
 import {
   createCustomProvider,
   defaultSettings,
+  mergeUiSettings,
   readSettingsFile
 } from "./store-codec";
 
@@ -47,6 +49,16 @@ function cloneRuntimeSnapshot(snapshot: RuntimeSnapshot): RuntimeSnapshot {
     activeProviderId: snapshot.activeProviderId,
     updatedAt: snapshot.updatedAt
   };
+}
+
+function sameUiSettings(left: AppSettings["ui"], right: AppSettings["ui"]): boolean {
+  return (
+    left.keepAliveLimit === right.keepAliveLimit
+    && left.sidebarAutoHide === right.sidebarAutoHide
+    && left.startupView === right.startupView
+    && left.loadingOverlayMode === right.loadingOverlayMode
+    && left.autoFallbackOnEmbedError === right.autoFallbackOnEmbedError
+  );
 }
 
 export class AppStore {
@@ -153,6 +165,7 @@ export class AppStore {
   getSettings(): AppSettings {
     return {
       ...this.settingsCache,
+      ui: { ...this.settingsCache.ui },
       providerOverrides: { ...this.settingsCache.providerOverrides },
       customProviders: this.settingsCache.customProviders.map((provider) => ({ ...provider }))
     };
@@ -182,6 +195,18 @@ export class AppStore {
     };
     this.persistSettingsDebounced();
     return this.getSettings();
+  }
+
+  saveUiSettings(patch: UiSettingsPatch): AppSettings {
+    const nextUi = mergeUiSettings(this.settingsCache.ui, patch);
+    if (sameUiSettings(this.settingsCache.ui, nextUi)) {
+      return this.getSettings();
+    }
+
+    return this.updateSettings((current) => ({
+      ...current,
+      ui: nextUi
+    }));
   }
 
   saveLastProviderId(providerId: string): AppSettings {

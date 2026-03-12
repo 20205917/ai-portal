@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 
-import type { ProviderDefinition } from "../../../shared/types";
+import type { LoadingOverlayMode, ProviderDefinition } from "../../../shared/types";
 import { partitionFor } from "../provider-visual";
 import type { WebviewHost, WebviewLoadState } from "../types";
-
-const MAX_RETAINED_EMBEDDED_WEBVIEWS = 3;
 
 interface WorkspaceViewProps {
   visible: boolean;
   activeProvider: ProviderDefinition;
   activeEmbeddedProvider: ProviderDefinition | null;
   embeddedProviders: ProviderDefinition[];
+  keepAliveLimit: number;
+  loadingOverlayMode: LoadingOverlayMode;
   webviewState: WebviewLoadState;
   webviewError: string;
   bindWebviewNode: (element: Element | null) => void;
@@ -23,6 +23,8 @@ export function WorkspaceView(props: WorkspaceViewProps) {
     activeProvider,
     activeEmbeddedProvider,
     embeddedProviders,
+    keepAliveLimit,
+    loadingOverlayMode,
     webviewState,
     webviewError,
     bindWebviewNode,
@@ -38,7 +40,7 @@ export function WorkspaceView(props: WorkspaceViewProps) {
     setRetainedEmbeddedProviderIds((current) => {
       const next = current.filter((providerId) => providerId !== activeEmbeddedProviderId);
       next.push(activeEmbeddedProviderId);
-      while (next.length > MAX_RETAINED_EMBEDDED_WEBVIEWS) {
+      while (next.length > keepAliveLimit) {
         next.shift();
       }
       if (next.length === current.length && next.every((providerId, index) => providerId === current[index])) {
@@ -46,7 +48,7 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       }
       return next;
     });
-  }, [activeEmbeddedProviderId]);
+  }, [activeEmbeddedProviderId, keepAliveLimit]);
 
   useEffect(() => {
     const validIds = new Set(embeddedProviders.map((provider) => provider.id));
@@ -66,6 +68,13 @@ export function WorkspaceView(props: WorkspaceViewProps) {
     }
     return embeddedProviders.filter((provider) => retainedIds.has(provider.id));
   }, [activeEmbeddedProviderId, embeddedProviders, retainedEmbeddedProviderIds]);
+  const shouldShowLoadingOverlay = Boolean(
+    activeEmbeddedProvider
+    && (loadingOverlayMode === "immediate"
+      ? webviewState !== "ready" && webviewState !== "error"
+      : webviewState === "loading" || webviewState === "idle")
+  );
+  const hideActiveWebviewForLoading = loadingOverlayMode === "immediate" && shouldShowLoadingOverlay;
 
   return (
     <section className={`workspace-content workspace-content-full ${visible ? "" : "is-hidden"}`}>
@@ -77,7 +86,9 @@ export function WorkspaceView(props: WorkspaceViewProps) {
               <webview
                 key={`${provider.id}:${provider.engine}`}
                 ref={active ? (bindWebviewNode as (element: WebviewHost | null) => void) : undefined}
-                className={`provider-webview ${active ? "is-active" : "is-hidden"}`}
+                className={`provider-webview ${active ? "is-active" : "is-hidden"} ${
+                  active && hideActiveWebviewForLoading ? "is-loading-hidden" : ""
+                }`}
                 src={provider.url}
                 partition={partitionFor(provider)}
                 allowpopups="true"
@@ -86,7 +97,7 @@ export function WorkspaceView(props: WorkspaceViewProps) {
           })}
           {activeEmbeddedProvider ? (
             <>
-              {webviewState === "loading" || webviewState === "idle" ? (
+              {shouldShowLoadingOverlay ? (
                 <div className="webview-overlay">
                   <div className="webview-overlay-card">
                     <div className="loading-dot" aria-hidden="true" />

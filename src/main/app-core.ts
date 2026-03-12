@@ -1,7 +1,12 @@
 import { app } from "electron";
 import { CommandServer } from "./command-server";
 import { ExternalWindowManager } from "./external-window-manager";
-import { broadcastProviders, broadcastRuntime, registerIpc } from "./ipc";
+import {
+  broadcastProviders,
+  broadcastRuntime,
+  broadcastSettings,
+  registerIpc
+} from "./ipc";
 import { MainWindowController } from "./main-window-controller";
 import { ProviderIconOrchestrator } from "./provider-icon-orchestrator";
 import {
@@ -18,7 +23,8 @@ import type {
   NewProviderInput,
   ProviderDefinition,
   RuntimeSnapshot,
-  RuntimeState
+  RuntimeState,
+  UiSettingsPatch
 } from "../shared/types";
 
 interface AppCoreOptions {
@@ -91,7 +97,9 @@ export class AppCore {
       getConfigDir: () => this.options.configDir,
       getSocketPath: () => this.options.socketPath,
       getEnvironment: () => this.options.hostEnvironment,
+      getUiSettings: () => this.getSettings().ui,
       selectProvider: this.selectProvider.bind(this),
+      updateUiSettings: this.updateUiSettings.bind(this),
       setProviderEngine: this.setProviderEngine.bind(this),
       setProviderEnabled: this.setProviderEnabled.bind(this),
       createProvider: this.createProvider.bind(this),
@@ -231,6 +239,15 @@ export class AppCore {
     if (provider.engine === "isolated-external") {
       this.externalWindowManager.open(provider);
     }
+  }
+
+  private async updateUiSettings(patch: UiSettingsPatch): Promise<void> {
+    this.store.saveUiSettings(patch);
+    const window = this.windowController.getWindow();
+    if (!window || window.isDestroyed()) {
+      return;
+    }
+    broadcastSettings(window, this.getSettings().ui);
   }
 
   private async setProviderEngine(providerId: string, engine: ProviderDefinition["engine"]): Promise<void> {

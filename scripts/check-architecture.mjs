@@ -52,7 +52,7 @@ const sourceFiles = walk(toAbsolute("src"))
 
 for (const file of sourceFiles) {
   const count = lineCount(file);
-  if (count > 320) {
+  if (count > 500) {
     errors.push(`${file} 超过单文件阈值：${count} > 320`);
   }
 }

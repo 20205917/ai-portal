@@ -1,30 +1,56 @@
 import type { FormEvent } from "react";
 
-import type { NewProviderInput, ProviderDefinition } from "../../../shared/types";
+import type {
+  NewProviderInput,
+  ProviderDefinition,
+  RuntimeSnapshot,
+  UiSettings
+} from "../../../shared/types";
 import { glyphFor, hostLabel, providerIconStyle } from "../provider-visual";
 
 interface HomeViewProps {
   providers: ProviderDefinition[];
   visibleProviders: ProviderDefinition[];
+  activeProvider: ProviderDefinition;
+  runtime: RuntimeSnapshot;
+  uiSettings: UiSettings;
   form: NewProviderInput;
   formBusy: boolean;
   formError: string;
   setForm: (next: NewProviderInput) => void;
   onOpenProvider: (providerId: string) => Promise<void>;
+  onOpenSettings: () => void;
   onToggleProviderVisibility: (provider: ProviderDefinition) => Promise<void>;
   onRemoveProvider: (provider: ProviderDefinition) => Promise<void>;
   onCreateProvider: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+}
+
+function runtimeLabel(runtime: RuntimeSnapshot["state"]): string {
+  if (runtime === "visible-focused") {
+    return "前台显示";
+  }
+  if (runtime === "visible-unfocused") {
+    return "后台可见";
+  }
+  if (runtime === "hidden") {
+    return "已隐藏";
+  }
+  return "未启动";
 }
 
 export function HomeView(props: HomeViewProps) {
   const {
     providers,
     visibleProviders,
+    activeProvider,
+    runtime,
+    uiSettings,
     form,
     formBusy,
     formError,
     setForm,
     onOpenProvider,
+    onOpenSettings,
     onToggleProviderVisibility,
     onRemoveProvider,
     onCreateProvider
@@ -32,9 +58,43 @@ export function HomeView(props: HomeViewProps) {
 
   return (
     <section className="home-shell">
+      <section className="home-panel panel home-status-panel">
+        <div className="home-status-header">
+          <div>
+            <h2>AI 调度台首页</h2>
+            <p>当前状态与关键策略一屏可见，支持快速切换入口。</p>
+          </div>
+          <button type="button" className="primary-action" onClick={onOpenSettings}>
+            打开设置
+          </button>
+        </div>
+        <div className="status-grid">
+          <article className="status-card">
+            <span>当前活跃服务</span>
+            <strong>{activeProvider.label}</strong>
+          </article>
+          <article className="status-card">
+            <span>窗口状态</span>
+            <strong>{runtimeLabel(runtime.state)}</strong>
+          </article>
+          <article className="status-card">
+            <span>保活数量</span>
+            <strong>{uiSettings.keepAliveLimit}</strong>
+          </article>
+          <article className="status-card">
+            <span>加载策略</span>
+            <strong>{uiSettings.loadingOverlayMode === "immediate" ? "即时遮罩" : "严格检测"}</strong>
+          </article>
+          <article className="status-card">
+            <span>侧栏自动隐藏</span>
+            <strong>{uiSettings.sidebarAutoHide ? "已开启" : "已关闭"}</strong>
+          </article>
+        </div>
+      </section>
+
       <section className="home-panel panel">
-        <h2>AI 调度台首页</h2>
-        <p>从这里打开常用 AI，也可以决定哪些网页显示在左侧栏。</p>
+        <h3>快速打开</h3>
+        <p>从这里打开常用 AI，也可以直观看到每个入口的当前模式。</p>
         <div className="home-grid">
           {visibleProviders.map((provider) => (
             <button
@@ -53,6 +113,10 @@ export function HomeView(props: HomeViewProps) {
               <span className="home-card-text">
                 <strong>{provider.label}</strong>
                 <small>{hostLabel(provider.url)}</small>
+                <span className="home-card-tags">
+                  <em className="tag">{provider.engine === "embedded" ? "内嵌模式" : "独立窗口"}</em>
+                  <em className="tag">{provider.enabled ? "侧栏显示" : "侧栏隐藏"}</em>
+                </span>
               </span>
             </button>
           ))}

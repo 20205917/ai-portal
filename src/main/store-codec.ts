@@ -3,13 +3,20 @@ import fs from "node:fs";
 import {
   DEFAULT_WINDOW_HEIGHT,
   DEFAULT_WINDOW_WIDTH,
-  SETTINGS_VERSION
+  SETTINGS_VERSION,
+  UI_KEEP_ALIVE_DEFAULT,
+  UI_KEEP_ALIVE_MAX,
+  UI_KEEP_ALIVE_MIN
 } from "../shared/constants";
 import type {
   AppSettings,
+  LoadingOverlayMode,
   NewProviderInput,
   ProviderDefinition,
   ProviderEngine,
+  StartupView,
+  UiSettings,
+  UiSettingsPatch,
   WindowBounds
 } from "../shared/types";
 
@@ -18,6 +25,7 @@ interface RawSettings {
   startupResetDone?: unknown;
   lastProviderId?: unknown;
   windowBounds?: unknown;
+  ui?: unknown;
   providerOverrides?: unknown;
   customProviders?: unknown;
 }
@@ -35,8 +43,19 @@ export function defaultSettings(): AppSettings {
     startupResetDone: false,
     lastProviderId: "chatgpt",
     windowBounds: defaultWindowBounds(),
+    ui: defaultUiSettings(),
     providerOverrides: {},
     customProviders: []
+  };
+}
+
+export function defaultUiSettings(): UiSettings {
+  return {
+    keepAliveLimit: UI_KEEP_ALIVE_DEFAULT,
+    sidebarAutoHide: false,
+    startupView: "workspace",
+    loadingOverlayMode: "immediate",
+    autoFallbackOnEmbedError: false
   };
 }
 
@@ -46,6 +65,22 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 function isProviderEngine(value: unknown): value is ProviderEngine {
   return value === "embedded" || value === "isolated-external";
+}
+
+function isStartupView(value: unknown): value is StartupView {
+  return value === "workspace" || value === "home";
+}
+
+function isLoadingOverlayMode(value: unknown): value is LoadingOverlayMode {
+  return value === "immediate" || value === "strict";
+}
+
+function normalizeKeepAliveLimit(value: unknown, fallback: number): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return fallback;
+  }
+  const normalized = Math.round(value);
+  return Math.min(UI_KEEP_ALIVE_MAX, Math.max(UI_KEEP_ALIVE_MIN, normalized));
 }
 
 function parseWindowBounds(value: unknown): WindowBounds {
@@ -59,6 +94,28 @@ function parseWindowBounds(value: unknown): WindowBounds {
   const x = typeof value.x === "number" ? value.x : undefined;
   const y = typeof value.y === "number" ? value.y : undefined;
   return { width, height, x, y };
+}
+
+function parseUiSettings(value: unknown, fallback: UiSettings = defaultUiSettings()): UiSettings {
+  if (!isObject(value)) {
+    return fallback;
+  }
+
+  return {
+    keepAliveLimit: normalizeKeepAliveLimit(value.keepAliveLimit, fallback.keepAliveLimit),
+    sidebarAutoHide: typeof value.sidebarAutoHide === "boolean" ? value.sidebarAutoHide : fallback.sidebarAutoHide,
+    startupView: isStartupView(value.startupView) ? value.startupView : fallback.startupView,
+    loadingOverlayMode: isLoadingOverlayMode(value.loadingOverlayMode)
+      ? value.loadingOverlayMode
+      : fallback.loadingOverlayMode,
+    autoFallbackOnEmbedError: typeof value.autoFallbackOnEmbedError === "boolean"
+      ? value.autoFallbackOnEmbedError
+      : fallback.autoFallbackOnEmbedError
+  };
+}
+
+export function mergeUiSettings(current: UiSettings, patch: UiSettingsPatch): UiSettings {
+  return parseUiSettings({ ...current, ...patch }, current);
 }
 
 function parseProvider(provider: unknown): ProviderDefinition | null {
@@ -140,6 +197,7 @@ function parseSettings(raw: unknown): AppSettings {
     startupResetDone: Boolean(data.startupResetDone),
     lastProviderId: typeof data.lastProviderId === "string" ? data.lastProviderId : fallback.lastProviderId,
     windowBounds: parseWindowBounds(data.windowBounds),
+    ui: parseUiSettings(data.ui, fallback.ui),
     providerOverrides: parseProviderOverrides(data.providerOverrides),
     customProviders
   };
