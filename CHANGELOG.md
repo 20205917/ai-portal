@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.5] - 2026-03-12
+
+### Fixed
+- 修复 Linux 安装包场景下豆包页面卡在加载状态的问题：`deb` 启动默认增加 `--disable-gpu`。
+- 修复 Linux 安装后 sandbox 权限不完整的问题：`postinst` 自动设置 `chrome-sandbox` 为 `root:root` 和 `4755`。
+- 修复升级后仍复用旧进程导致行为不一致的问题：`postinst` 增加 `pkill -x aiprotal` 清理旧驻留进程。
+
+### Changed
+- 调整运行时策略：默认不再自动启用 `--no-sandbox`，仅在 `AIPROTAL_NO_SANDBOX=1` 时开启。
+- 调整开发脚本：`npm run start` / `npm run dev` 默认注入 `AIPROTAL_NO_SANDBOX=1`，避免本地开发受 setuid 约束中断。
+
 ## [1.0.0] - 2026-03-12
 
 ### Other Changes
