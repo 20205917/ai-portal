@@ -5,9 +5,18 @@ export function shouldEnableNoSandbox(env: NodeJS.ProcessEnv, platform: NodeJS.P
   if (env.AIPROTAL_NO_SANDBOX === "0") {
     return false;
   }
-  return platform === "linux";
+  return false;
 }
 
-export function shouldDisableGpu(env: NodeJS.ProcessEnv): boolean {
-  return env.AIPROTAL_DISABLE_GPU === "1";
+export function shouldDisableGpu(
+  env: NodeJS.ProcessEnv,
+  platform: NodeJS.Platform = process.platform
+): boolean {
+  if (env.AIPROTAL_DISABLE_GPU === "1") {
+    return true;
+  }
+  if (env.AIPROTAL_DISABLE_GPU === "0") {
+    return false;
+  }
+  return platform === "linux";
 }

@@ -25,6 +25,11 @@ linux:
         - x64
   category: Utility
 
+deb:
+  executableArgs:
+    - --disable-gpu
+  afterInstall: scripts/deb-after-install.sh
+
 win:
   icon: assets/icon.ico
   target:

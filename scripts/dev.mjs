@@ -12,7 +12,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const env = {
   ...process.env,
-  AIPROTAL_RENDERER_URL: "http://127.0.0.1:5173"
+  AIPROTAL_RENDERER_URL: "http://127.0.0.1:5173",
+  AIPROTAL_NO_SANDBOX: process.env.AIPROTAL_NO_SANDBOX || "1"
 };
 delete env.ELECTRON_RUN_AS_NODE;
 const electronFlags = buildElectronFlags(env);

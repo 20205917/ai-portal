@@ -18,7 +18,7 @@ const rendererUrl = process.env.AIPROTAL_RENDERER_URL;
 const debugRenderer = process.env.AIPROTAL_DEBUG === "1";
 const allowMultiInstance = process.env.AIPROTAL_ALLOW_MULTI_INSTANCE === "1";
 const enableNoSandbox = shouldEnableNoSandbox(process.env, process.platform);
-const enableDisableGpu = shouldDisableGpu(process.env);
+const enableDisableGpu = shouldDisableGpu(process.env, process.platform);
 const initialCommand = parseAidcArgs(process.argv) ?? { command: "toggle" as const };
 const hostEnvironment = resolveHostEnvironment({ env: process.env, platform: process.platform });
 

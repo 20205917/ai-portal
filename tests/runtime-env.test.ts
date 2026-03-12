@@ -35,11 +35,11 @@ describe("runtime-env parity", () => {
     expect(runtimeEnv.resolveSocketPath(env, options)).toBe(resolveMainSocketPath(mainConfigDir, { env, ...options }));
   });
 
-  it("enables no-sandbox by default only on linux", async () => {
+  it("disables no-sandbox by default", async () => {
     const runtimeEnv = await import("../scripts/lib/runtime-env.mjs");
     const env = {} as NodeJS.ProcessEnv;
 
-    expect(runtimeEnv.shouldEnableNoSandbox(env, { platform: "linux" })).toBe(true);
+    expect(runtimeEnv.shouldEnableNoSandbox(env, { platform: "linux" })).toBe(false);
     expect(runtimeEnv.shouldEnableNoSandbox(env, { platform: "win32" })).toBe(false);
   });
 });

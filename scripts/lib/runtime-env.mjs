@@ -34,18 +34,24 @@ export function isNamedPipeEndpoint(endpoint) {
 }
 
 export function shouldEnableNoSandbox(env = process.env, options = {}) {
-  const platform = resolvePlatform(options);
   if (env.AIPROTAL_NO_SANDBOX === "1") {
     return true;
   }
   if (env.AIPROTAL_NO_SANDBOX === "0") {
     return false;
   }
-  return platform === "linux";
+  return false;
 }
 
-export function shouldDisableGpu(env = process.env) {
-  return env.AIPROTAL_DISABLE_GPU === "1";
+export function shouldDisableGpu(env = process.env, options = {}) {
+  const platform = resolvePlatform(options);
+  if (env.AIPROTAL_DISABLE_GPU === "1") {
+    return true;
+  }
+  if (env.AIPROTAL_DISABLE_GPU === "0") {
+    return false;
+  }
+  return platform === "linux";
 }
 
 export function resolveConfigDir(env = process.env, options = {}) {
@@ -83,7 +89,7 @@ export function buildElectronFlags(env = process.env, options = {}) {
   if (shouldEnableNoSandbox(env, options)) {
     flags.push("--no-sandbox");
   }
-  if (shouldDisableGpu(env)) {
+  if (shouldDisableGpu(env, options)) {
     flags.push("--disable-gpu");
   }
   return flags;
