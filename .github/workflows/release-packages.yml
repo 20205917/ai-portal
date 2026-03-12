@@ -49,6 +49,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Sync app version with tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+
       - name: Build package
         run: npm run ${{ matrix.package_script }}
 
