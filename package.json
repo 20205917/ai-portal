@@ -1,11 +1,11 @@
 {
-  "name": "aidispatchcenter",
+  "name": "ai-protal",
   "version": "1.0.0",
   "private": true,
-  "description": "Linux / Windows AI launcher with a dedicated desktop shell for precise toggle and focus workflows.",
+  "description": "ai-protal is a Linux / Windows AI launcher with a dedicated desktop shell for precise toggle and focus workflows.",
   "author": {
     "name": "zhangyj",
-    "email": "zhangyj@yimucn.com"
+    "email": "zyj20205917@gmail"
   },
   "main": "dist/main/index.js",
   "bin": {

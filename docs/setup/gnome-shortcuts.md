@@ -1,6 +1,6 @@
 # GNOME 快捷键接入
 
-`AIDispatchCenter` 默认会先尝试应用内注册全局快捷键。当前默认适配环境是本机 `Ubuntu GNOME X11 (ubuntu-xorg)`，若应用内注册失败，可回退为系统快捷键绑定 CLI 命令。
+`ai-protal` 默认会先尝试应用内注册全局快捷键。当前默认适配环境是本机 `Ubuntu GNOME X11 (ubuntu-xorg)`，若应用内注册失败，可回退为系统快捷键绑定 CLI 命令。
 
 ## 推荐绑定
 

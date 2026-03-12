@@ -1,5 +1,5 @@
-appId: com.yimu.AIDispatchCenter
-productName: AIDispatchCenter
+appId: io.ai-protal.app
+productName: ai-protal
 artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
 
 directories:
@@ -13,7 +13,7 @@ files:
 asar: true
 
 linux:
-  maintainer: "zhangyj <zhangyj@yimucn.com>"
+  maintainer: "zhangyj <zyj20205917@gmail>"
   target:
     - target: deb
       arch:

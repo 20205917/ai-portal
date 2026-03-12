@@ -3,7 +3,7 @@ import path from "node:path";
 
 export const COMMAND_NAMES = ["toggle", "show", "hide", "open", "status", "next", "prev"];
 
-const APP_DIR_NAME = "AIDispatchCenter";
+const APP_DIR_NAME = "ai-protal";
 const SOCKET_FILE_NAME = "aidc.sock";
 const WINDOWS_PIPE_PREFIX = "\\\\.\\pipe\\";
 

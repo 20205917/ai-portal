@@ -58,7 +58,7 @@ npm run verify:gate
 ```bash
 VERSION=1.0.0
 TODAY=2026-03-12
-python3 /home/yimu/.codex/skills/dev2release/scripts/conventional_changelog.py \
+python3 "$CODEX_HOME/skills/dev2release/scripts/conventional_changelog.py" \
   --from-ref "" \
   --to-ref HEAD \
   --version "$VERSION" \
@@ -66,7 +66,7 @@ python3 /home/yimu/.codex/skills/dev2release/scripts/conventional_changelog.py \
   --changelog CHANGELOG.md \
   --write
 
-python3 /home/yimu/.codex/skills/dev2release/scripts/conventional_changelog.py \
+python3 "$CODEX_HOME/skills/dev2release/scripts/conventional_changelog.py" \
   --from-ref "" \
   --to-ref HEAD \
   --version "$VERSION" \

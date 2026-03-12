@@ -1,7 +1,7 @@
 import os from "node:os";
 import path from "node:path";
 
-const APP_DIR_NAME = "AIDispatchCenter";
+const APP_DIR_NAME = "ai-protal";
 const SOCKET_FILE_NAME = "aidc.sock";
 const WINDOWS_PIPE_PREFIX = "\\\\.\\pipe\\";
 

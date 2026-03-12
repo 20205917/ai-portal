@@ -19,7 +19,7 @@ describe("paths", () => {
       homeDir: "/home/demo"
     });
 
-    expect(configDir).toBe("/x/config/AIDispatchCenter");
+    expect(configDir).toBe("/x/config/ai-protal");
     expect(resolveRuntimeDir(configDir, { env, platform: "linux" })).toBe("/x/runtime");
     expect(resolveSocketPath(configDir, { env, platform: "linux" })).toBe("/x/runtime/aidc.sock");
   });
@@ -32,10 +32,10 @@ describe("paths", () => {
       homeDir: "/home/demo"
     });
 
-    expect(configDir).toBe("/home/demo/.config/AIDispatchCenter");
+    expect(configDir).toBe("/home/demo/.config/ai-protal");
     expect(resolveRuntimeDir(configDir, { env, platform: "linux" })).toBe(configDir);
     expect(resolveSocketPath(configDir, { env, platform: "linux" })).toBe(
-      "/home/demo/.config/AIDispatchCenter/aidc.sock"
+      "/home/demo/.config/ai-protal/aidc.sock"
     );
   });
 
@@ -50,7 +50,7 @@ describe("paths", () => {
       homeDir: "C:\\Users\\demo"
     });
 
-    expect(configDir).toBe("C:\\Users\\demo\\AppData\\Roaming\\AIDispatchCenter");
+    expect(configDir).toBe("C:\\Users\\demo\\AppData\\Roaming\\ai-protal");
     expect(resolveRuntimeDir(configDir, { env, platform: "win32" })).toBe(configDir);
     expect(resolveSocketPath(configDir, { env, platform: "win32" })).toBe("\\\\.\\pipe\\aidc-demo-user");
   });

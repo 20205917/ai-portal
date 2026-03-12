@@ -1,6 +1,6 @@
-# AIDispatchCenter
+# ai-protal
 
-AIDispatchCenter 是一个面向 Linux / Windows 的 AI 入口调度台。
+ai-protal 是一个面向 Linux / Windows 的 AI 入口调度台。
 它把常用 AI 服务集中在一个独立桌面壳里，通过 `aidc` 命令实现快速拉起、隐藏和切换。
 
 ## 功能概览
@@ -22,16 +22,16 @@ AIDispatchCenter 是一个面向 Linux / Windows 的 AI 入口调度台。
 ### Linux (`.deb`) 安装
 
 ```bash
-sudo dpkg -i AIDispatchCenter-<version>-linux-x64.deb
+sudo dpkg -i ai-protal-<version>-linux-x64.deb
 # 若出现依赖问题
 sudo apt-get -f install
 ```
 
 ### Windows (`.exe`) 安装
 
-1. 双击 `AIDispatchCenter-<version>-windows-x64.exe`
+1. 双击 `ai-protal-<version>-windows-x64.exe`
 2. 按安装向导完成安装
-3. 从开始菜单启动 `AIDispatchCenter`
+3. 从开始菜单启动 `ai-protal`
 
 ## 最小使用路径
 

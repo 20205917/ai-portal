@@ -31,7 +31,7 @@ export class TrayController {
       }
 
       this.tray = new Tray(icon);
-      this.tray.setToolTip("AIDispatchCenter");
+      this.tray.setToolTip("ai-protal");
       this.tray.on("click", () => {
         void this.options.onToggleWindow();
       });
@@ -85,7 +85,7 @@ export class TrayController {
       },
       { type: "separator" },
       {
-        label: "退出 AIDC",
+        label: "退出 ai-protal",
         click: () => {
           this.options.onExitApp();
         }
