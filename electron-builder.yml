@@ -12,6 +12,10 @@ files:
 
 asar: true
 
+electronLanguages:
+  - zh-CN
+  - en-US
+
 linux:
   maintainer: "zhangyj <zyj20205917@gmail>"
   target:
