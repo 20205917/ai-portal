@@ -96,6 +96,28 @@ export function App() {
     };
   }, [flowNotice]);
 
+  useEffect(() => {
+    const rafIds = new Set<number>();
+    const unsubscribe = window.aidc.onRevealProbe((payload) => {
+      const raf1 = window.requestAnimationFrame(() => {
+        rafIds.delete(raf1);
+        const raf2 = window.requestAnimationFrame(() => {
+          rafIds.delete(raf2);
+          void window.aidc.reportRevealSeen(payload.traceId, Date.now());
+        });
+        rafIds.add(raf2);
+      });
+      rafIds.add(raf1);
+    });
+    return () => {
+      for (const rafId of rafIds) {
+        window.cancelAnimationFrame(rafId);
+      }
+      rafIds.clear();
+      unsubscribe();
+    };
+  }, []);
+
   function showFlowNotice(message: string): void {
     flowNoticeSeqRef.current += 1;
     setFlowNotice({

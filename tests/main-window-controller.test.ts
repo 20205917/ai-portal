@@ -121,6 +121,7 @@ function createController() {
     }),
     shouldCloseWindow: () => false,
     onRuntimeSignal: vi.fn(),
+    onWindowShown: vi.fn(),
     onWindowClosed: vi.fn(),
     onWindowBoundsChanged: vi.fn(),
     onAfterLoaded: vi.fn()

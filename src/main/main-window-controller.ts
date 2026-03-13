@@ -19,6 +19,7 @@ interface MainWindowControllerOptions {
   getWindowBounds: () => WindowBounds;
   shouldCloseWindow: () => boolean;
   onRuntimeSignal: () => void;
+  onWindowShown: () => void;
   onWindowClosed: () => void;
   onWindowBoundsChanged: (bounds: WindowBounds) => void;
   onAfterLoaded: () => void;
@@ -216,6 +217,7 @@ export class MainWindowController {
     window.on("show", () => {
       this.visibleByIntent = true;
       this.enforceSkipTaskbar(window);
+      this.options.onWindowShown();
       this.options.onRuntimeSignal();
     });
     window.on("hide", () => {

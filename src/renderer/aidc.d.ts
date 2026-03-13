@@ -23,12 +23,14 @@ declare global {
       openExternalProvider: (providerId: string) => Promise<void>;
       hideWindow: () => Promise<void>;
       getSystemMetrics: () => Promise<SystemMetricsSnapshot>;
+      reportRevealSeen: (traceId: string, seenAtMs: number) => Promise<void>;
       onProvidersUpdated: (
         listener: (payload: { providers: ProviderDefinition[]; activeProviderId: string }) => void
       ) => () => void;
       onRuntimeUpdated: (listener: (runtime: RuntimeSnapshot) => void) => () => void;
       onSettingsUpdated: (listener: (settings: UiSettings) => void) => () => void;
       onShortcutStatusUpdated: (listener: (status: ShortcutStatus) => void) => () => void;
+      onRevealProbe: (listener: (payload: { traceId: string; shownAtMs: number }) => void) => () => void;
     };
   }
 
