@@ -9,6 +9,9 @@ export interface PerfTraceEntry {
   source: string;
   loggedAt: string;
   hiddenDurationMs?: number;
+  triggerLoopLagMs?: number;
+  windowActionQueueDelayMs?: number;
+  windowActionPendingAtEnqueue?: number;
   clientSentAtMs?: number;
   triggeredAtMs: number;
   shownAtMs?: number;
