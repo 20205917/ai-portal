@@ -105,7 +105,6 @@ export class MainWindowController {
   async reveal(): Promise<void> {
     const window = await this.ensureWindow();
     this.visibleByIntent = true;
-    this.enforceSkipTaskbar(window);
     window.show();
     window.focus();
     this.options.onRuntimeSignal();
