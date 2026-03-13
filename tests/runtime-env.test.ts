@@ -42,4 +42,39 @@ describe("runtime-env parity", () => {
     expect(runtimeEnv.shouldEnableNoSandbox(env, { platform: "linux" })).toBe(false);
     expect(runtimeEnv.shouldEnableNoSandbox(env, { platform: "win32" })).toBe(false);
   });
+
+  it("keeps gpu and 3d apis enabled by default", async () => {
+    const runtimeEnv = await import("../scripts/lib/runtime-env.mjs");
+    const env = {} as NodeJS.ProcessEnv;
+
+    expect(runtimeEnv.shouldDisableGpu(env, { platform: "linux" })).toBe(false);
+    expect(runtimeEnv.shouldDisableGpu(env, { platform: "win32" })).toBe(false);
+    expect(runtimeEnv.shouldDisable3dApis(env, { platform: "linux" })).toBe(false);
+    expect(runtimeEnv.shouldDisable3dApis(env, { platform: "win32" })).toBe(false);
+    expect(runtimeEnv.buildElectronFlags(env, { platform: "linux" })).not.toContain("--disable-gpu");
+    expect(runtimeEnv.buildElectronFlags(env, { platform: "linux" })).not.toContain("--disable-3d-apis");
+  });
+
+  it("allows overriding 3d api policy by env", async () => {
+    const runtimeEnv = await import("../scripts/lib/runtime-env.mjs");
+    const env = {
+      AIPROTAL_DISABLE_GPU: "0",
+      AIPROTAL_DISABLE_3D_APIS: "1"
+    } as NodeJS.ProcessEnv;
+
+    expect(runtimeEnv.shouldDisable3dApis(env, { platform: "linux" })).toBe(true);
+    expect(runtimeEnv.buildElectronFlags(env, { platform: "linux" })).toContain("--disable-3d-apis");
+  });
+
+  it("disables 3d apis automatically when gpu is explicitly disabled", async () => {
+    const runtimeEnv = await import("../scripts/lib/runtime-env.mjs");
+    const env = {
+      AIPROTAL_DISABLE_GPU: "1"
+    } as NodeJS.ProcessEnv;
+
+    expect(runtimeEnv.shouldDisableGpu(env, { platform: "linux" })).toBe(true);
+    expect(runtimeEnv.shouldDisable3dApis(env, { platform: "linux" })).toBe(true);
+    expect(runtimeEnv.buildElectronFlags(env, { platform: "linux" })).toContain("--disable-gpu");
+    expect(runtimeEnv.buildElectronFlags(env, { platform: "linux" })).toContain("--disable-3d-apis");
+  });
 });

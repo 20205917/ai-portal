@@ -3,7 +3,7 @@ import path from "node:path";
 import { app, shell } from "electron";
 
 import { AppCore } from "./app-core";
-import { shouldDisableGpu, shouldEnableNoSandbox } from "./env";
+import { shouldDisable3dApis, shouldDisableGpu, shouldEnableNoSandbox } from "./env";
 import { resolveSocketPath, resolveConfigDir } from "./paths";
 import { resolveHostEnvironment } from "./host-environment";
 import { APP_ID, APP_NAME } from "../shared/constants";
@@ -19,6 +19,7 @@ const debugRenderer = process.env.AIPROTAL_DEBUG === "1";
 const allowMultiInstance = process.env.AIPROTAL_ALLOW_MULTI_INSTANCE === "1";
 const enableNoSandbox = shouldEnableNoSandbox(process.env, process.platform);
 const enableDisableGpu = shouldDisableGpu(process.env, process.platform);
+const enableDisable3dApis = shouldDisable3dApis(process.env, process.platform);
 const initialCommand = parseAidcArgs(process.argv) ?? { command: "toggle" as const };
 const hostEnvironment = resolveHostEnvironment({ env: process.env, platform: process.platform });
 
@@ -31,6 +32,10 @@ if (enableNoSandbox) {
 if (enableDisableGpu) {
   app.disableHardwareAcceleration();
   app.commandLine.appendSwitch("disable-gpu");
+}
+if (enableDisable3dApis) {
+  app.commandLine.appendSwitch("disable-3d-apis");
+  app.commandLine.appendSwitch("disable-software-rasterizer");
 }
 
 const gotLock = app.requestSingleInstanceLock();

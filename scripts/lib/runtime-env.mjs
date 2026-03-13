@@ -44,14 +44,24 @@ export function shouldEnableNoSandbox(env = process.env, options = {}) {
 }
 
 export function shouldDisableGpu(env = process.env, options = {}) {
-  const platform = resolvePlatform(options);
+  void options;
   if (env.AIPROTAL_DISABLE_GPU === "1") {
     return true;
   }
   if (env.AIPROTAL_DISABLE_GPU === "0") {
     return false;
   }
-  return platform === "linux";
+  return false;
+}
+
+export function shouldDisable3dApis(env = process.env, options = {}) {
+  if (env.AIPROTAL_DISABLE_3D_APIS === "1") {
+    return true;
+  }
+  if (env.AIPROTAL_DISABLE_3D_APIS === "0") {
+    return false;
+  }
+  return shouldDisableGpu(env, options);
 }
 
 export function resolveConfigDir(env = process.env, options = {}) {
@@ -91,6 +101,10 @@ export function buildElectronFlags(env = process.env, options = {}) {
   }
   if (shouldDisableGpu(env, options)) {
     flags.push("--disable-gpu");
+  }
+  if (shouldDisable3dApis(env, options)) {
+    flags.push("--disable-3d-apis");
+    flags.push("--disable-software-rasterizer");
   }
   return flags;
 }

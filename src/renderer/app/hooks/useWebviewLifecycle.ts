@@ -10,6 +10,30 @@ interface WebviewLifecycle {
   retryEmbeddedPage: () => void;
 }
 
+const webviewLoadErrorHints: Record<number, string> = {
+  [-100]: "连接被目标站点中断，通常和网络波动、代理策略或站点限流有关。",
+  [-105]: "域名解析失败，请检查 DNS、代理或网络连通性。",
+  [-106]: "网络连接中断，请稍后重试。",
+  [-118]: "连接超时，请检查网络后重试。",
+  [-202]: "证书校验失败，可能被代理证书拦截。"
+};
+
+function buildWebviewLoadErrorMessage(errorCode?: number, errorDescription?: string): string {
+  if (!errorCode) {
+    return errorDescription ? `加载失败：${errorDescription}` : "页面加载失败，请重试。";
+  }
+
+  const hint = webviewLoadErrorHints[errorCode];
+  if (hint) {
+    return `加载失败 (${errorCode})：${hint}`;
+  }
+
+  if (errorDescription) {
+    return `加载失败 (${errorCode})：${errorDescription}`;
+  }
+  return `加载失败 (${errorCode})。`;
+}
+
 export function useWebviewLifecycle(activeEmbeddedProvider: ProviderDefinition | null): WebviewLifecycle {
   const [webviewNode, setWebviewNode] = useState<WebviewHost | null>(null);
   const [webviewState, setWebviewState] = useState<WebviewLoadState>("idle");
@@ -114,11 +138,7 @@ export function useWebviewLifecycle(activeEmbeddedProvider: ProviderDefinition |
       }
 
       setWebviewState("error");
-      setWebviewError(
-        `加载失败${detail.errorCode ? ` (${detail.errorCode})` : ""}${
-          detail.errorDescription ? `：${detail.errorDescription}` : "。"
-        }`
-      );
+      setWebviewError(buildWebviewLoadErrorMessage(detail.errorCode, detail.errorDescription));
       window.clearTimeout(timeoutId);
       window.clearInterval(pollId);
     };
