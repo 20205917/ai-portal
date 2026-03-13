@@ -3,14 +3,12 @@ import { CommandServer } from "./command-server";
 import { ExternalWindowManager } from "./external-window-manager";
 import {
   broadcastProviders,
-  broadcastRevealProbe,
   broadcastRuntime,
   broadcastSettings,
   broadcastShortcutStatus,
   registerIpc
 } from "./ipc";
 import { MainWindowController } from "./main-window-controller";
-import { PerfTraceLogger } from "./perf-trace-logger";
 import { cycleEnabledProvider, type ProviderCycleDirection } from "./provider-cycle";
 import { ProviderIconOrchestrator } from "./provider-icon-orchestrator";
 import {
@@ -21,13 +19,7 @@ import {
 import { ShortcutManager } from "./shortcut-manager";
 import { AppStore } from "./store";
 import { TrayController } from "./tray-controller";
-import {
-  type CommandName,
-  parseAidcArgs,
-  type CommandDiagnostics,
-  type CommandPayload,
-  type CommandResponse
-} from "../shared/commands";
+import { parseAidcArgs, type CommandDiagnostics, type CommandPayload, type CommandResponse } from "../shared/commands";
 import type {
   AppSettings,
   HostEnvironment,
@@ -45,24 +37,7 @@ interface RevealTrigger {
   source: string;
   requestId?: string;
   clientSentAtMs?: number;
-  command?: CommandName;
-}
-
-interface PendingRevealTrace {
-  traceId: string;
-  source: string;
-  triggeredAtMs: number;
-  requestId?: string;
-  clientSentAtMs?: number;
-  hiddenDurationMs?: number;
-  triggerLoopLagMs?: number;
-  windowActionQueueDelayMs?: number;
-  windowActionPendingAtEnqueue?: number;
-}
-
-interface WindowActionMeta {
-  queueDelayMs: number;
-  pendingAtEnqueue: number;
+  command?: string;
 }
 
 interface AppCoreOptions {
@@ -86,18 +61,10 @@ export class AppCore {
   private readonly windowController: MainWindowController;
   private readonly providerIconOrchestrator: ProviderIconOrchestrator;
   private readonly shortcutManager: ShortcutManager;
-  private readonly perfTraceLogger = new PerfTraceLogger();
   private shortcutStatus: ShortcutStatus;
   private commandDiagnostics: CommandDiagnostics = {};
   private trayController: TrayController | null = null;
   private windowActionChain: Promise<void> = Promise.resolve();
-  private windowActionPending = 0;
-  private eventLoopPulseAtMs = Date.now();
-  private readonly eventLoopPulseTimer: NodeJS.Timeout;
-  private revealTraceSeq = 0;
-  private pendingRevealQueue: PendingRevealTrace[] = [];
-  private pendingRevealSeen = new Map<string, PendingRevealTrace & { shownAtMs: number }>();
-  private lastHiddenAtMs: number | null = null;
 
   constructor(private readonly options: AppCoreOptions) {
     this.store = new AppStore(options.configDir);
@@ -121,7 +88,7 @@ export class AppCore {
       getWindowBounds: () => this.getSettings().windowBounds,
       shouldCloseWindow: () => this.shouldCloseWindow(),
       onRuntimeSignal: () => this.syncRuntime(),
-      onWindowShown: () => this.handleWindowShown(),
+      onWindowShown: () => undefined,
       onWindowClosed: () => {
         if (!this.shutdownRequested) {
           app.quit();
@@ -148,10 +115,6 @@ export class AppCore {
       onProviderPrev: () => this.cycleProviderWithReveal("prev", { source: "shortcut:providerPrev" })
     });
     this.shortcutStatus = this.shortcutManager.getStatus();
-    this.eventLoopPulseTimer = setInterval(() => {
-      this.eventLoopPulseAtMs = Date.now();
-    }, 50);
-    this.eventLoopPulseTimer.unref?.();
 
     registerIpc({
       getProviders: () => this.providers,
@@ -173,8 +136,7 @@ export class AppCore {
         const provider = this.getProvider(providerId);
         this.externalWindowManager.open(provider);
       },
-      hideWindow: async () => this.hideMainWindow(),
-      reportRevealSeen: async (traceId, seenAtMs) => this.reportRevealSeen(traceId, seenAtMs)
+      hideWindow: async () => this.hideMainWindow()
     });
   }
 
@@ -212,7 +174,6 @@ export class AppCore {
   }
 
   async shutdown(): Promise<void> {
-    clearInterval(this.eventLoopPulseTimer);
     this.shutdownRequested = true;
     await this.store.flushPendingWrites();
     this.commandServer.close();
@@ -271,9 +232,6 @@ export class AppCore {
         updatedAt: new Date().toISOString()
       };
       this.store.saveRuntime(this.runtime);
-      if (nextState === "hidden") {
-        this.lastHiddenAtMs = Date.now();
-      }
     }
 
     const window = this.windowController.getWindow();
@@ -298,163 +256,41 @@ export class AppCore {
     this.syncRuntime();
   }
 
-  private buildRevealTrace(trigger: RevealTrigger): PendingRevealTrace {
-    const now = Date.now();
-    this.revealTraceSeq += 1;
-    return {
-      traceId: `rv-${now.toString(36)}-${this.revealTraceSeq.toString(36)}`,
-      source: trigger.source,
-      triggeredAtMs: now,
-      requestId: trigger.requestId,
-      clientSentAtMs: trigger.clientSentAtMs,
-      hiddenDurationMs: this.lastHiddenAtMs ? Math.max(0, now - this.lastHiddenAtMs) : undefined,
-      triggerLoopLagMs: Math.max(0, now - this.eventLoopPulseAtMs)
-    };
-  }
-
-  private handleWindowShown(): void {
-    const trace = this.pendingRevealQueue.shift();
-    if (!trace) {
-      return;
-    }
-
-    const shownAtMs = Date.now();
-    const triggerToShownMs = Math.max(0, shownAtMs - trace.triggeredAtMs);
-    const inputToShownMs = typeof trace.clientSentAtMs === "number"
-      ? Math.max(0, shownAtMs - trace.clientSentAtMs)
-      : undefined;
-
-    this.perfTraceLogger.log({
-      type: "reveal_shown",
-      traceId: trace.traceId,
-      source: trace.source,
-      loggedAt: new Date().toISOString(),
-      hiddenDurationMs: trace.hiddenDurationMs,
-      triggerLoopLagMs: trace.triggerLoopLagMs,
-      windowActionQueueDelayMs: trace.windowActionQueueDelayMs,
-      windowActionPendingAtEnqueue: trace.windowActionPendingAtEnqueue,
-      clientSentAtMs: trace.clientSentAtMs,
-      triggeredAtMs: trace.triggeredAtMs,
-      shownAtMs,
-      triggerToShownMs,
-      inputToShownMs
-    });
-
-    const window = this.windowController.getWindow();
-    if (!window || window.isDestroyed()) {
-      return;
-    }
-    this.pendingRevealSeen.set(trace.traceId, { ...trace, shownAtMs });
-    broadcastRevealProbe(window, { traceId: trace.traceId, shownAtMs });
-    setTimeout(() => {
-      this.pendingRevealSeen.delete(trace.traceId);
-    }, 4000);
-  }
-
-  private async reportRevealSeen(traceId: string, seenAtMs: number): Promise<void> {
-    const trace = this.pendingRevealSeen.get(traceId);
-    if (!trace) {
-      return;
-    }
-    this.pendingRevealSeen.delete(traceId);
-
-    const safeSeenAtMs = Number.isFinite(seenAtMs) ? seenAtMs : Date.now();
-    const shownToSeenMs = Math.max(0, safeSeenAtMs - trace.shownAtMs);
-    const triggerToSeenMs = Math.max(0, safeSeenAtMs - trace.triggeredAtMs);
-    const inputToSeenMs = typeof trace.clientSentAtMs === "number"
-      ? Math.max(0, safeSeenAtMs - trace.clientSentAtMs)
-      : undefined;
-
-    this.perfTraceLogger.log({
-      type: "reveal_seen",
-      traceId: trace.traceId,
-      source: trace.source,
-      loggedAt: new Date().toISOString(),
-      hiddenDurationMs: trace.hiddenDurationMs,
-      triggerLoopLagMs: trace.triggerLoopLagMs,
-      windowActionQueueDelayMs: trace.windowActionQueueDelayMs,
-      windowActionPendingAtEnqueue: trace.windowActionPendingAtEnqueue,
-      clientSentAtMs: trace.clientSentAtMs,
-      triggeredAtMs: trace.triggeredAtMs,
-      shownAtMs: trace.shownAtMs,
-      seenAtMs: safeSeenAtMs,
-      triggerToSeenMs,
-      shownToSeenMs,
-      inputToSeenMs
-    });
-  }
-
-  private enqueueWindowAction<T>(action: (meta: WindowActionMeta) => Promise<T>): Promise<T> {
-    const enqueuedAtMs = Date.now();
-    const pendingAtEnqueue = this.windowActionPending;
-    this.windowActionPending += 1;
-
-    const run = this.windowActionChain.then(
-      () => action({
-        queueDelayMs: Math.max(0, Date.now() - enqueuedAtMs),
-        pendingAtEnqueue
-      }),
-      () => action({
-        queueDelayMs: Math.max(0, Date.now() - enqueuedAtMs),
-        pendingAtEnqueue
-      })
-    );
-    this.windowActionChain = run
-      .then(() => undefined, () => undefined)
-      .finally(() => {
-        this.windowActionPending = Math.max(0, this.windowActionPending - 1);
-      });
+  private enqueueWindowAction<T>(action: () => Promise<T>): Promise<T> {
+    const run = this.windowActionChain.then(action, action);
+    this.windowActionChain = run.then(() => undefined, () => undefined);
     return run;
   }
 
-  private applyWindowActionMeta(trace: PendingRevealTrace, meta: WindowActionMeta): void {
-    trace.windowActionQueueDelayMs = meta.queueDelayMs;
-    trace.windowActionPendingAtEnqueue = meta.pendingAtEnqueue;
-  }
-
   private async revealMainWindow(trigger: RevealTrigger = { source: "internal:reveal" }): Promise<void> {
-    const trace = this.buildRevealTrace(trigger);
-    await this.enqueueWindowAction(async (meta) => {
-      this.applyWindowActionMeta(trace, meta);
-      await this.revealMainWindowNow(trace);
-    });
+    await this.enqueueWindowAction(() => this.revealMainWindowNow(trigger));
   }
 
-  private async revealMainWindowNow(trace: PendingRevealTrace): Promise<void> {
-    this.pendingRevealQueue.push(trace);
-    this.lastHiddenAtMs = null;
+  private async revealMainWindowNow(_trigger: RevealTrigger): Promise<void> {
     await this.windowController.reveal();
   }
 
   private async hideMainWindow(): Promise<void> {
-    await this.enqueueWindowAction(async () => this.hideMainWindowNow());
+    await this.enqueueWindowAction(() => this.hideMainWindowNow());
   }
 
   private async hideMainWindowNow(): Promise<void> {
     await this.windowController.hide();
-    this.lastHiddenAtMs = Date.now();
   }
 
   private async toggleMainWindow(trigger: RevealTrigger = { source: "internal:toggle" }): Promise<void> {
-    const revealTrace = this.buildRevealTrace(trigger);
-    await this.enqueueWindowAction(async (meta) => this.toggleMainWindowNow(trigger, revealTrace, meta));
+    await this.enqueueWindowAction(() => this.toggleMainWindowNow(trigger));
   }
 
-  private async toggleMainWindowNow(
-    trigger: RevealTrigger,
-    revealTrace: PendingRevealTrace,
-    meta: WindowActionMeta
-  ): Promise<void> {
+  private async toggleMainWindowNow(trigger: RevealTrigger): Promise<void> {
     const window = this.windowController.getWindow();
     if (!window || window.isDestroyed()) {
-      this.applyWindowActionMeta(revealTrace, meta);
-      await this.revealMainWindowNow(revealTrace);
+      await this.revealMainWindowNow(trigger);
       return;
     }
 
     if (!this.windowController.isVisible()) {
-      this.applyWindowActionMeta(revealTrace, meta);
-      await this.revealMainWindowNow(revealTrace);
+      await this.revealMainWindowNow(trigger);
       return;
     }
 
@@ -463,8 +299,7 @@ export class AppCore {
       return;
     }
 
-    this.applyWindowActionMeta(revealTrace, meta);
-    await this.revealMainWindowNow(revealTrace);
+    await this.revealMainWindowNow(trigger);
   }
 
   private async cycleProvider(direction: ProviderCycleDirection): Promise<void> {
@@ -688,13 +523,6 @@ export class AppCore {
         updatedAt: new Date().toISOString()
       };
 
-      if (typeof clientSentAtMs === "number") {
-        console.log(
-          `[AIDC][timing] toggle request=${trace?.requestId ?? "-"} `
-          + `client->server=${clientToServerMs ?? -1}ms `
-          + `server=${serverHandleMs}ms total=${endToEndMs ?? -1}ms state=${runtime.state}`
-        );
-      }
     }
 
     return {

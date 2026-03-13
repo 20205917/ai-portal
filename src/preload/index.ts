@@ -28,8 +28,6 @@ contextBridge.exposeInMainWorld("aidc", {
     ipcRenderer.invoke("app:open-external-provider", providerId),
   hideWindow: (): Promise<void> => ipcRenderer.invoke("app:hide-window"),
   getSystemMetrics: (): Promise<SystemMetricsSnapshot> => ipcRenderer.invoke("app:get-system-metrics"),
-  reportRevealSeen: (traceId: string, seenAtMs: number): Promise<void> =>
-    ipcRenderer.invoke("app:report-reveal-seen", traceId, seenAtMs),
   onProvidersUpdated: (listener: (payload: { providers: ProviderDefinition[]; activeProviderId: string }) => void) => {
     const subscription = (_event: unknown, payload: { providers: ProviderDefinition[]; activeProviderId: string }) =>
       listener(payload);
@@ -50,11 +48,5 @@ contextBridge.exposeInMainWorld("aidc", {
     const subscription = (_event: unknown, payload: ShortcutStatus) => listener(payload);
     ipcRenderer.on("app:shortcut-status-updated", subscription);
     return () => ipcRenderer.removeListener("app:shortcut-status-updated", subscription);
-  },
-  onRevealProbe: (listener: (payload: { traceId: string; shownAtMs: number }) => void) => {
-    const subscription = (_event: unknown, payload: { traceId: string; shownAtMs: number }) =>
-      listener(payload);
-    ipcRenderer.on("app:reveal-probe", subscription);
-    return () => ipcRenderer.removeListener("app:reveal-probe", subscription);
   }
 });

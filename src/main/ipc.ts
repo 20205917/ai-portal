@@ -31,7 +31,6 @@ interface IpcContext {
   removeProvider: (providerId: string) => Promise<void>;
   openExternalProvider: (providerId: string) => Promise<void>;
   hideWindow: () => Promise<void>;
-  reportRevealSeen: (traceId: string, seenAtMs: number) => Promise<void>;
 }
 
 export function registerIpc(context: IpcContext): void {
@@ -87,10 +86,6 @@ export function registerIpc(context: IpcContext): void {
   });
 
   ipcMain.handle("app:get-system-metrics", () => context.getSystemMetrics());
-
-  ipcMain.handle("app:report-reveal-seen", async (_event, traceId: string, seenAtMs: number) => {
-    await context.reportRevealSeen(traceId, seenAtMs);
-  });
 }
 
 export function broadcastProviders(window: BrowserWindow, providers: ProviderDefinition[], activeProviderId: string): void {
@@ -110,8 +105,4 @@ export function broadcastSettings(window: BrowserWindow, ui: UiSettings): void {
 
 export function broadcastShortcutStatus(window: BrowserWindow, status: ShortcutStatus): void {
   window.webContents.send("app:shortcut-status-updated", status);
-}
-
-export function broadcastRevealProbe(window: BrowserWindow, payload: { traceId: string; shownAtMs: number }): void {
-  window.webContents.send("app:reveal-probe", payload);
 }
