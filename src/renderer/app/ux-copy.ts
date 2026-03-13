@@ -18,20 +18,6 @@ export function buildProviderSwitchFeedback(
   return `已切换到 ${provider.label}`;
 }
 
-export function buildContinueActionLabel(provider: ProviderDefinition): string {
-  if (provider.engine === "isolated-external") {
-    return `打开 ${provider.label}`;
-  }
-  return `继续使用 ${provider.label}`;
-}
-
-export function buildContinueActionDescription(provider: ProviderDefinition): string {
-  if (provider.engine === "isolated-external") {
-    return "这个服务当前使用独立窗口模式，可直接打开或聚焦。";
-  }
-  return "上次活跃服务已准备就绪，回到工作区即可继续当前会话。";
-}
-
 export function buildWorkspaceLoadingCopy(provider: ProviderDefinition, isRestoringFromCache: boolean): {
   eyebrow: string;
   title: string;

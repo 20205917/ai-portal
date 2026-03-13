@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useState, type CSSProperties, type ChangeEvent } from "react";
 
 import { UI_KEEP_ALIVE_MAX, UI_KEEP_ALIVE_MIN } from "../../../shared/constants";
 import type {
@@ -9,6 +9,7 @@ import type {
   UiSettingsPatch
 } from "../../../shared/types";
 import { InfoTip } from "./InfoTip";
+import { TopBanner } from "./TopBanner";
 
 interface SettingsViewProps {
   uiSettings: UiSettings;
@@ -20,32 +21,24 @@ interface SettingsViewProps {
 interface HotkeyActionSpec {
   action: ShortcutAction;
   title: string;
-  description: string;
   allowUnset: boolean;
-  command: string;
 }
 
 const hotkeyActions: HotkeyActionSpec[] = [
   {
     action: "toggleWindow",
     title: "显示/隐藏调度台",
-    description: "全局拉起、聚焦或隐藏主窗口",
-    allowUnset: false,
-    command: "aidc toggle"
+    allowUnset: false
   },
   {
     action: "providerNext",
     title: "切换到下一项服务",
-    description: "若窗口隐藏，会先显示再切换",
-    allowUnset: true,
-    command: "aidc next"
+    allowUnset: true
   },
   {
     action: "providerPrev",
     title: "切换到上一项服务",
-    description: "若窗口隐藏，会先显示再切换",
-    allowUnset: true,
-    command: "aidc prev"
+    allowUnset: true
   }
 ];
 
@@ -86,6 +79,18 @@ export function SettingsView(props: SettingsViewProps) {
   } = props;
   const [clipboardMessage, setClipboardMessage] = useState("");
 
+  useEffect(() => {
+    if (uiSettings.backgroundResident) {
+      return;
+    }
+    void onUpdateUiSettings({ backgroundResident: true });
+  }, [uiSettings.backgroundResident, onUpdateUiSettings]);
+
+  const keepAliveRange = UI_KEEP_ALIVE_MAX - UI_KEEP_ALIVE_MIN;
+  const keepAlivePercent = keepAliveRange > 0
+    ? ((uiSettings.keepAliveLimit - UI_KEEP_ALIVE_MIN) / keepAliveRange) * 100
+    : 0;
+
   function setKeepAlive(event: ChangeEvent<HTMLInputElement>): void {
     const keepAliveLimit = Number.parseInt(event.target.value, 10);
     void onUpdateUiSettings({ keepAliveLimit });
@@ -98,11 +103,11 @@ export function SettingsView(props: SettingsViewProps) {
     void onUpdateUiSettings({ startupView });
   }
 
-  function setLoadingOverlayMode(loadingOverlayMode: UiSettings["loadingOverlayMode"]): void {
-    if (loadingOverlayMode === uiSettings.loadingOverlayMode) {
+  function setSidebarAutoHide(sidebarAutoHide: boolean): void {
+    if (sidebarAutoHide === uiSettings.sidebarAutoHide) {
       return;
     }
-    void onUpdateUiSettings({ loadingOverlayMode });
+    void onUpdateUiSettings({ sidebarAutoHide });
   }
 
   function updateHotkey(action: ShortcutAction, value: string): void {
@@ -136,58 +141,59 @@ export function SettingsView(props: SettingsViewProps) {
 
   return (
     <section className="settings-shell">
+      <TopBanner />
       <section className="settings-grid">
         <article className="panel">
-          <div className="panel-title-row">
-            <h3>性能与保活</h3>
-            <InfoTip label="查看性能与保活说明">
-              <ul className="info-tip-list">
-                <li>控制 webview 缓存上限，平衡切换速度与内存占用。</li>
-                <li>{UI_KEEP_ALIVE_MIN} 表示最省内存，{UI_KEEP_ALIVE_MAX} 表示切换更快。</li>
-                <li>开启后响应更快，但会持续占用内存；关闭后点击关闭按钮将直接退出。</li>
-              </ul>
-            </InfoTip>
+          <div className="settings-option-row settings-option-row-slider">
+            <span className="settings-option-name">缓存服务数量</span>
+            <span className="settings-option-detail">
+              服务后台缓存,切换时可快速启动。
+            </span>
+            <div
+              className="settings-slider-control"
+              style={{ "--slider-percent": `${keepAlivePercent}%` } as CSSProperties}
+            >
+              <span className="settings-slider-value" aria-hidden="true">{uiSettings.keepAliveLimit}</span>
+              <input
+                type="range"
+                min={UI_KEEP_ALIVE_MIN}
+                max={UI_KEEP_ALIVE_MAX}
+                step={1}
+                value={uiSettings.keepAliveLimit}
+                onChange={setKeepAlive}
+                aria-label="保活数量"
+              />
+            </div>
           </div>
-          <label className="range-field">
-            <span>保活数量：{uiSettings.keepAliveLimit}</span>
-            <input
-              type="range"
-              min={UI_KEEP_ALIVE_MIN}
-              max={UI_KEEP_ALIVE_MAX}
-              step={1}
-              value={uiSettings.keepAliveLimit}
-              onChange={setKeepAlive}
-            />
-          </label>
-          <label className="toggle-row">
-            <span>后台常驻（关闭窗口仅隐藏）</span>
-            <input
-              type="checkbox"
-              checked={uiSettings.backgroundResident}
-              onChange={(event) => void onUpdateUiSettings({ backgroundResident: event.target.checked })}
-            />
-          </label>
         </article>
 
         <article className="panel">
-          <div className="panel-title-row">
-            <h3>窗口与侧栏</h3>
-            <InfoTip label="查看窗口与侧栏说明">
-              <ul className="info-tip-list">
-                <li>侧栏自动隐藏只在工作区生效，首页和设置页保持固定显示。</li>
-              </ul>
-            </InfoTip>
+          <div className="settings-option-row">
+            <span className="settings-option-name">侧栏自动隐藏</span>
+            <span className="settings-option-detail">仅工作区自动隐藏，首页/设置固定显示。</span>
+            <div className="segment-control">
+              <button
+                type="button"
+                className={uiSettings.sidebarAutoHide ? "is-active" : ""}
+                onClick={() => setSidebarAutoHide(true)}
+              >
+                开启
+              </button>
+              <button
+                type="button"
+                className={!uiSettings.sidebarAutoHide ? "is-active" : ""}
+                onClick={() => setSidebarAutoHide(false)}
+              >
+                关闭
+              </button>
+            </div>
           </div>
-          <label className="toggle-row">
-            <span>侧栏自动隐藏</span>
-            <input
-              type="checkbox"
-              checked={uiSettings.sidebarAutoHide}
-              onChange={(event) => void onUpdateUiSettings({ sidebarAutoHide: event.target.checked })}
-            />
-          </label>
-          <div className="mode-group">
-            <span>默认启动页面</span>
+        </article>
+
+        <article className="panel">
+          <div className="settings-option-row">
+            <span className="settings-option-name">默认启动页面</span>
+            <span className="settings-option-detail">应用启动后默认进入页面。</span>
             <div className="segment-control">
               <button
                 type="button"
@@ -205,44 +211,6 @@ export function SettingsView(props: SettingsViewProps) {
               </button>
             </div>
           </div>
-        </article>
-
-        <article className="panel">
-          <div className="panel-title-row">
-            <h3>加载与兼容</h3>
-            <InfoTip label="查看加载与兼容说明">
-              <ul className="info-tip-list">
-                <li>优先保证首帧稳定反馈，必要时可自动回退独立窗口。</li>
-              </ul>
-            </InfoTip>
-          </div>
-          <div className="mode-group">
-            <span>加载策略</span>
-            <div className="segment-control">
-              <button
-                type="button"
-                className={uiSettings.loadingOverlayMode === "immediate" ? "is-active" : ""}
-                onClick={() => setLoadingOverlayMode("immediate")}
-              >
-                即时遮罩
-              </button>
-              <button
-                type="button"
-                className={uiSettings.loadingOverlayMode === "strict" ? "is-active" : ""}
-                onClick={() => setLoadingOverlayMode("strict")}
-              >
-                严格检测
-              </button>
-            </div>
-          </div>
-          <label className="toggle-row">
-            <span>内嵌失败时自动回退独立窗口</span>
-            <input
-              type="checkbox"
-              checked={uiSettings.autoFallbackOnEmbedError}
-              onChange={(event) => void onUpdateUiSettings({ autoFallbackOnEmbedError: event.target.checked })}
-            />
-          </label>
         </article>
 
         <article className="panel settings-placeholder">
@@ -264,15 +232,17 @@ export function SettingsView(props: SettingsViewProps) {
             {hotkeyActions.map((item) => {
               const currentValue = hotkeyValue(uiSettings, item.action) ?? "";
               const status = shortcutStatus[item.action];
+              const statusText = stateLabel(status.state);
+              const normalizedMessage = status.message.trim();
+              const showStatusMessage = normalizedMessage.length > 0 && normalizedMessage !== statusText;
               return (
                 <div className="hotkey-row" key={item.action}>
                   <div className="hotkey-meta">
                     <strong>{item.title}</strong>
-                    <small>{item.description} · 命令：<code>{item.command}</code></small>
                     <span className={`shortcut-status shortcut-status-${status.state}`}>
-                      {stateLabel(status.state)}
+                      {statusText}
                     </span>
-                    <small>{status.message}</small>
+                    {showStatusMessage ? <small>{status.message}</small> : null}
                     {status.fallbackCommand ? (
                       <div className="shortcut-fallback">
                         <code>{status.fallbackCommand}</code>

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import type { ProviderDefinition } from "../src/shared/types";
 import {
-  buildContinueActionLabel,
   buildIsolatedWindowCopy,
   buildProviderSwitchFeedback,
   buildWorkspaceLoadingCopy
@@ -41,11 +40,6 @@ describe("ux-copy", () => {
         wasRestoredFromCache: false
       })
     ).toBe("继续使用 ChatGPT");
-  });
-
-  it("changes continue action label for isolated windows", () => {
-    expect(buildContinueActionLabel(provider())).toBe("继续使用 ChatGPT");
-    expect(buildContinueActionLabel(provider({ label: "豆包", engine: "isolated-external" }))).toBe("打开 豆包");
   });
 
   it("differentiates fresh loading from restored loading", () => {

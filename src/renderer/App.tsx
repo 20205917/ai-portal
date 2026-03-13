@@ -143,20 +143,6 @@ export function App() {
     }
   }
 
-  async function continueWithActiveProvider(): Promise<void> {
-    if (activeProvider.engine !== "isolated-external") {
-      await openProvider(activeProvider.id);
-      return;
-    }
-    setFormError("");
-    try {
-      await window.aidc.openExternalProvider(activeProvider.id);
-      showFlowNotice(`已打开 ${activeProvider.label} 独立窗口`);
-    } catch (error) {
-      setFormError(error instanceof Error ? error.message : "打开独立窗口失败。");
-    }
-  }
-
   async function hideWindow(): Promise<void> {
     await window.aidc.hideWindow();
   }
@@ -255,9 +241,7 @@ export function App() {
           {view === "home" ? (
             <HomeView
               providers={providers}
-              visibleProviders={visibleProviders}
               activeProvider={activeProvider}
-              runtime={runtime}
               uiSettings={uiSettings}
               systemMetrics={systemMetrics}
               cachedEmbeddedProviderIds={cachedEmbeddedProviderIds}
@@ -265,9 +249,7 @@ export function App() {
               formBusy={formBusy}
               formError={formError}
               setForm={setForm}
-              onContinueWithActiveProvider={continueWithActiveProvider}
               onOpenProvider={openProvider}
-              onOpenSettings={() => setView("settings")}
               onHideWindow={hideWindow}
               onToggleProviderVisibility={toggleProviderVisibility}
               onRemoveProvider={removeProvider}
