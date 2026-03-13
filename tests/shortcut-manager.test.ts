@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ShortcutManager } from "../src/main/shortcut-manager";
 import type { HotkeySettings } from "../src/shared/types";
@@ -6,6 +6,7 @@ import type { HotkeySettings } from "../src/shared/types";
 class FakeRegistrar {
   public registered: string[] = [];
   public unregisterAllCount = 0;
+  private readonly callbacks = new Map<string, () => void>();
   private readonly failSet = new Set<string>();
   private readonly throwSet = new Set<string>();
 
@@ -17,17 +18,23 @@ class FakeRegistrar {
     this.throwSet.add(accelerator);
   }
 
-  register(accelerator: string, _callback: () => void): boolean {
+  register(accelerator: string, callback: () => void): boolean {
     if (this.throwSet.has(accelerator)) {
       throw new Error("invalid");
     }
     this.registered.push(accelerator);
+    this.callbacks.set(accelerator, callback);
     return !this.failSet.has(accelerator);
   }
 
   unregisterAll(): void {
     this.unregisterAllCount += 1;
     this.registered = [];
+    this.callbacks.clear();
+  }
+
+  trigger(accelerator: string): void {
+    this.callbacks.get(accelerator)?.();
   }
 }
 
@@ -130,5 +137,34 @@ describe("ShortcutManager", () => {
     expect(status.toggleWindow.state).toBe("conflict");
     expect(status.toggleWindow.fallbackCommand).toBeUndefined();
     expect(status.toggleWindow.message).toContain("Windows");
+  });
+
+  it("guards repeated shortcut callbacks within a short burst", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-03-13T10:00:00.000Z"));
+
+    const registrar = new FakeRegistrar();
+    let fired = 0;
+    const manager = new ShortcutManager({
+      isX11: false,
+      platform: "linux",
+      registrar,
+      onToggleWindow: async () => {
+        fired += 1;
+      },
+      onProviderNext: async () => undefined,
+      onProviderPrev: async () => undefined
+    });
+
+    manager.apply(settings());
+    registrar.trigger("Ctrl+Alt+Q");
+    registrar.trigger("Ctrl+Alt+Q");
+    expect(fired).toBe(1);
+
+    vi.setSystemTime(new Date("2026-03-13T10:00:00.200Z"));
+    registrar.trigger("Ctrl+Alt+Q");
+    expect(fired).toBe(2);
+
+    vi.useRealTimers();
   });
 });

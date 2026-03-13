@@ -105,8 +105,15 @@ export class MainWindowController {
   async reveal(): Promise<void> {
     const window = await this.ensureWindow();
     this.visibleByIntent = true;
-    window.show();
-    window.focus();
+    if (!window.isVisible()) {
+      window.show();
+    }
+    setImmediate(() => {
+      if (!this.mainWindow || this.mainWindow.isDestroyed() || !this.visibleByIntent) {
+        return;
+      }
+      this.mainWindow.focus();
+    });
     this.options.onRuntimeSignal();
   }
 

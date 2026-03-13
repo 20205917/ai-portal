@@ -22,6 +22,7 @@ interface ShortcutRegistrar {
 }
 
 const ACTIONS: ShortcutAction[] = ["toggleWindow", "providerNext", "providerPrev"];
+const SHORTCUT_REPEAT_GUARD_MS = 120;
 
 const COMMAND_BY_ACTION: Record<ShortcutAction, string> = {
   toggleWindow: "aidc toggle",
@@ -151,6 +152,11 @@ function cloneStatus(status: ShortcutStatus): ShortcutStatus {
 export class ShortcutManager {
   private readonly registrar: ShortcutRegistrar;
   private status: ShortcutStatus = defaultStatus();
+  private readonly lastTriggeredAt: Record<ShortcutAction, number> = {
+    toggleWindow: 0,
+    providerNext: 0,
+    providerPrev: 0
+  };
 
   constructor(private readonly options: ShortcutManagerOptions) {
     this.registrar = options.registrar ?? {
@@ -220,6 +226,12 @@ export class ShortcutManager {
       }
 
       const callback = () => {
+        const now = Date.now();
+        if (now - this.lastTriggeredAt[action] < SHORTCUT_REPEAT_GUARD_MS) {
+          return;
+        }
+        this.lastTriggeredAt[action] = now;
+
         const target = action === "toggleWindow"
           ? this.options.onToggleWindow
           : action === "providerNext"

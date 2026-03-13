@@ -82,6 +82,7 @@ export class AppCore {
   private shortcutStatus: ShortcutStatus;
   private commandDiagnostics: CommandDiagnostics = {};
   private trayController: TrayController | null = null;
+  private windowActionChain: Promise<void> = Promise.resolve();
   private revealTraceSeq = 0;
   private pendingRevealQueue: PendingRevealTrace[] = [];
   private pendingRevealSeen = new Map<string, PendingRevealTrace & { shownAtMs: number }>();
@@ -359,35 +360,53 @@ export class AppCore {
     });
   }
 
+  private enqueueWindowAction<T>(action: () => Promise<T>): Promise<T> {
+    const run = this.windowActionChain.then(action, action);
+    this.windowActionChain = run.then(() => undefined, () => undefined);
+    return run;
+  }
+
   private async revealMainWindow(trigger: RevealTrigger = { source: "internal:reveal" }): Promise<void> {
+    await this.enqueueWindowAction(() => this.revealMainWindowNow(trigger));
+  }
+
+  private async revealMainWindowNow(trigger: RevealTrigger): Promise<void> {
     this.pendingRevealQueue.push(this.buildRevealTrace(trigger));
     this.lastHiddenAtMs = null;
     await this.windowController.reveal();
   }
 
   private async hideMainWindow(): Promise<void> {
+    await this.enqueueWindowAction(() => this.hideMainWindowNow());
+  }
+
+  private async hideMainWindowNow(): Promise<void> {
     await this.windowController.hide();
     this.lastHiddenAtMs = Date.now();
   }
 
   private async toggleMainWindow(trigger: RevealTrigger = { source: "internal:toggle" }): Promise<void> {
+    await this.enqueueWindowAction(() => this.toggleMainWindowNow(trigger));
+  }
+
+  private async toggleMainWindowNow(trigger: RevealTrigger): Promise<void> {
     const window = this.windowController.getWindow();
     if (!window || window.isDestroyed()) {
-      await this.revealMainWindow(trigger);
+      await this.revealMainWindowNow(trigger);
       return;
     }
 
     if (!this.windowController.isVisible()) {
-      await this.revealMainWindow(trigger);
+      await this.revealMainWindowNow(trigger);
       return;
     }
 
     if (window.isFocused()) {
-      await this.hideMainWindow();
+      await this.hideMainWindowNow();
       return;
     }
 
-    await this.revealMainWindow(trigger);
+    await this.revealMainWindowNow(trigger);
   }
 
   private async cycleProvider(direction: ProviderCycleDirection): Promise<void> {
