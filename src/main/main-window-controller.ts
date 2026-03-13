@@ -79,6 +79,7 @@ export class MainWindowController {
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: false,
+        backgroundThrottling: false,
         webviewTag: true
       }
     };
