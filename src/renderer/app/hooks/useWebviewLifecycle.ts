@@ -99,7 +99,8 @@ export function useWebviewLifecycle(activeEmbeddedProvider: ProviderDefinition |
             true
           ));
         } catch {
-          hasVisualContent = false;
+          // 部分站点在早期阶段会暂时拒绝脚本执行，这里不应阻塞 ready 判定。
+          hasVisualContent = true;
         }
       }
 

@@ -75,7 +75,9 @@ export class AppStore {
   private settingsWriteTimer: NodeJS.Timeout | null = null;
   private runtimeWriteTimer: NodeJS.Timeout | null = null;
   private settingsWriteInFlight: Promise<void> = Promise.resolve();
+  private runtimeWriteInFlight: Promise<void> = Promise.resolve();
   private settingsWriteSeq = 0;
+  private runtimeWriteSeq = 0;
 
   constructor(private readonly configDir: string) {
     fs.mkdirSync(configDir, { recursive: true });
@@ -180,11 +182,28 @@ export class AppStore {
     }
 
     const serialized = serializeJson(this.runtimeCache);
+    this.enqueueRuntimeWrite(serialized);
+  }
+
+  private enqueueRuntimeWrite(serialized: string): void {
     if (serialized === this.lastPersistedRuntimeJson) {
       return;
     }
-    fs.writeFileSync(this.runtimePath, serialized);
-    this.lastPersistedRuntimeJson = serialized;
+
+    const seq = ++this.runtimeWriteSeq;
+    this.runtimeWriteInFlight = this.runtimeWriteInFlight
+      .catch(() => undefined)
+      .then(async () => {
+        if (seq < this.runtimeWriteSeq || serialized === this.lastPersistedRuntimeJson) {
+          return;
+        }
+        try {
+          await fs.promises.writeFile(this.runtimePath, serialized);
+          this.lastPersistedRuntimeJson = serialized;
+        } catch (error) {
+          console.error("[AIDC] Failed to persist runtime:", error instanceof Error ? error.message : String(error));
+        }
+      });
   }
 
   private persistRuntimeDebounced(): void {
@@ -325,5 +344,6 @@ export class AppStore {
     this.persistSettingsNow();
     await this.settingsWriteInFlight.catch(() => undefined);
     this.persistRuntimeNow();
+    await this.runtimeWriteInFlight.catch(() => undefined);
   }
 }
