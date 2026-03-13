@@ -132,20 +132,20 @@ export function WorkspaceView(props: WorkspaceViewProps) {
             <>
               {shouldShowLoadingOverlay ? (
                 <div className="webview-overlay">
-                  <div className="webview-overlay-card">
-                    {loadingCopy ? <span className="webview-overlay-eyebrow">{loadingCopy.eyebrow}</span> : null}
-                    <div className="loading-dot" aria-hidden="true" />
+                  <div className="workspace-prompt-card workspace-prompt-loading" role="status" aria-live="polite">
+                    <span className="workspace-prompt-dot" aria-hidden="true" />
                     <strong>{loadingCopy?.title ?? `正在打开 ${activeEmbeddedProvider.label}`}</strong>
                     <p>{loadingCopy?.description ?? "正在连接目标站点，请稍候…"}</p>
                   </div>
                 </div>
               ) : null}
               {webviewState === "error" ? (
-                <div className="webview-overlay">
-                  <div className="webview-overlay-card">
-                    <strong>{activeEmbeddedProvider.label} 无法正常显示</strong>
+                <div className="webview-overlay webview-overlay-error">
+                  <div className="workspace-prompt-card workspace-prompt-error" role="alert" aria-live="assertive">
+                    <span className="workspace-prompt-dot" aria-hidden="true" />
+                    <strong>{activeEmbeddedProvider.label} 加载失败</strong>
                     <p>{webviewError || "页面加载失败，请重试。"}</p>
-                    <div className="webview-overlay-actions">
+                    <div className="workspace-prompt-actions">
                       <button type="button" onClick={onRetryEmbeddedPage}>
                         重试加载
                       </button>

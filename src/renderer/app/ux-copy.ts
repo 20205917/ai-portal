@@ -19,22 +19,19 @@ export function buildProviderSwitchFeedback(
 }
 
 export function buildWorkspaceLoadingCopy(provider: ProviderDefinition, isRestoringFromCache: boolean): {
-  eyebrow: string;
   title: string;
   description: string;
 } {
   if (isRestoringFromCache) {
     return {
-      eyebrow: "已命中保活缓存",
       title: `正在恢复 ${provider.label}`,
-      description: "已找到上次保留的页面内容，正在恢复当前会话，通常会比首次打开更快。"
+      description: "正在恢复上次页面内容，通常会比首次打开更快。"
     };
   }
 
   return {
-    eyebrow: "首次进入或重新连接",
     title: `正在打开 ${provider.label}`,
-    description: "正在连接目标站点并准备页面内容，首次打开时通常需要等待几秒。"
+    description: "正在连接目标站点并准备页面，首次打开通常需要几秒。"
   };
 }
 
