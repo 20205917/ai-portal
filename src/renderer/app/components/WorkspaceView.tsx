@@ -4,6 +4,11 @@ import type { LoadingOverlayMode, ProviderDefinition } from "../../../shared/typ
 import { partitionFor } from "../provider-visual";
 import type { WebviewHost, WebviewLoadState } from "../types";
 import { buildIsolatedWindowCopy, buildWorkspaceLoadingCopy } from "../ux-copy";
+import {
+  clampRetainedEmbeddedProviderIds,
+  updateRetainedEmbeddedProviderIds,
+  wasProviderRestoredFromCache
+} from "../workspace-cache";
 
 interface WorkspaceViewProps {
   visible: boolean;
@@ -35,23 +40,34 @@ export function WorkspaceView(props: WorkspaceViewProps) {
   } = props;
   const activeEmbeddedProviderId = activeEmbeddedProvider?.id ?? null;
   const [retainedEmbeddedProviderIds, setRetainedEmbeddedProviderIds] = useState<string[]>([]);
+  const [activeProviderWasCached, setActiveProviderWasCached] = useState(false);
+
+  useEffect(() => {
+    setActiveProviderWasCached(wasProviderRestoredFromCache(retainedEmbeddedProviderIds, activeEmbeddedProviderId));
+  }, [activeEmbeddedProviderId]);
 
   useEffect(() => {
     if (!activeEmbeddedProviderId) {
       return;
     }
     setRetainedEmbeddedProviderIds((current) => {
-      const next = current.filter((providerId) => providerId !== activeEmbeddedProviderId);
-      next.push(activeEmbeddedProviderId);
-      while (next.length > keepAliveLimit) {
-        next.shift();
-      }
+      const next = updateRetainedEmbeddedProviderIds(current, activeEmbeddedProviderId, keepAliveLimit);
       if (next.length === current.length && next.every((providerId, index) => providerId === current[index])) {
         return current;
       }
       return next;
     });
   }, [activeEmbeddedProviderId, keepAliveLimit]);
+
+  useEffect(() => {
+    setRetainedEmbeddedProviderIds((current) => {
+      const next = clampRetainedEmbeddedProviderIds(current, keepAliveLimit);
+      if (next.length === current.length && next.every((providerId, index) => providerId === current[index])) {
+        return current;
+      }
+      return next;
+    });
+  }, [keepAliveLimit]);
 
   useEffect(() => {
     const validIds = new Set(embeddedProviders.map((provider) => provider.id));
@@ -75,15 +91,14 @@ export function WorkspaceView(props: WorkspaceViewProps) {
     () => retainedEmbeddedProviderIds.filter((providerId) => providerId !== activeEmbeddedProviderId),
     [activeEmbeddedProviderId, retainedEmbeddedProviderIds]
   );
-  const isRestoringFromCache = Boolean(
-    activeEmbeddedProviderId && retainedEmbeddedProviderIds.includes(activeEmbeddedProviderId)
-  );
+  const isRestoringFromCache = activeProviderWasCached;
   const loadingCopy = activeEmbeddedProvider
     ? buildWorkspaceLoadingCopy(activeEmbeddedProvider, isRestoringFromCache)
     : null;
   const isolatedWindowCopy = buildIsolatedWindowCopy(activeProvider);
   const shouldShowLoadingOverlay = Boolean(
     activeEmbeddedProvider
+    && !isRestoringFromCache
     && (loadingOverlayMode === "immediate"
       ? webviewState !== "ready" && webviewState !== "error"
       : webviewState === "loading" || webviewState === "idle")

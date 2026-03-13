@@ -11,7 +11,7 @@
   --danger: #fb7185;
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
   --sidebar-expanded-width: 62px;
-  --sidebar-collapsed-width: 14px;
+  --sidebar-collapsed-width: 10px;
   --sidebar-motion-duration: 320ms;
 }
 
@@ -179,10 +179,10 @@ code {
 
 .sidebar.is-collapsed::before {
   content: "";
-  width: 3px;
-  height: 48px;
+  width: 2px;
+  height: 42px;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(52, 211, 153, 0.56), rgba(245, 158, 11, 0.2));
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.5), rgba(148, 163, 184, 0.12));
 }
 
 .workspace {
