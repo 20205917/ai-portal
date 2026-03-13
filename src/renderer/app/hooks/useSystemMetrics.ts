@@ -19,10 +19,14 @@ const defaultMetrics: SystemMetricsSnapshot = {
   updatedAt: ""
 };
 
-export function useSystemMetrics(intervalMs: number): SystemMetricsSnapshot {
+export function useSystemMetrics(intervalMs: number, enabled = true): SystemMetricsSnapshot {
   const [metrics, setMetrics] = useState<SystemMetricsSnapshot>(defaultMetrics);
 
   useEffect(() => {
+    if (!enabled || intervalMs <= 0) {
+      return () => undefined;
+    }
+
     let disposed = false;
 
     const syncMetrics = async () => {
@@ -47,7 +51,7 @@ export function useSystemMetrics(intervalMs: number): SystemMetricsSnapshot {
       disposed = true;
       window.clearInterval(timer);
     };
-  }, [intervalMs]);
+  }, [intervalMs, enabled]);
 
   return metrics;
 }

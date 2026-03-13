@@ -60,7 +60,7 @@ export function App() {
     [visibleProviders]
   );
   const sidebarAutoHideActive = uiSettings.sidebarAutoHide && view === "workspace";
-  const systemMetrics = useSystemMetrics(2000);
+  const systemMetrics = useSystemMetrics(2000, view === "home");
   const activeEmbeddedProvider =
     view === "workspace" && activeProvider?.engine === "embedded" ? activeProvider : null;
   const {
