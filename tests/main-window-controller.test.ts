@@ -109,7 +109,19 @@ vi.mock("electron", () => ({
 import { MainWindowController } from "../src/main/main-window-controller";
 
 function createController() {
-  return new MainWindowController({
+  return createControllerWithHooks().controller;
+}
+
+function createControllerWithHooks() {
+  const hooks = {
+    onRuntimeSignal: vi.fn(),
+    onWindowShown: vi.fn(),
+    onWindowClosed: vi.fn(),
+    onWindowBoundsChanged: vi.fn(),
+    onAfterLoaded: vi.fn()
+  };
+
+  const controller = new MainWindowController({
     iconPath: "/tmp/icon.png",
     rendererIndex: "/tmp/index.html",
     debugRenderer: false,
@@ -120,12 +132,14 @@ function createController() {
       y: 20
     }),
     shouldCloseWindow: () => false,
-    onRuntimeSignal: vi.fn(),
-    onWindowShown: vi.fn(),
-    onWindowClosed: vi.fn(),
-    onWindowBoundsChanged: vi.fn(),
-    onAfterLoaded: vi.fn()
+    onRuntimeSignal: hooks.onRuntimeSignal,
+    onWindowShown: hooks.onWindowShown,
+    onWindowClosed: hooks.onWindowClosed,
+    onWindowBoundsChanged: hooks.onWindowBoundsChanged,
+    onAfterLoaded: hooks.onAfterLoaded
   });
+
+  return { controller, hooks };
 }
 
 describe("MainWindowController", () => {
@@ -163,5 +177,16 @@ describe("MainWindowController", () => {
 
     expect(controller.isVisible()).toBe(true);
     expect(window.isVisible()).toBe(true);
+  });
+
+  it("reports shown immediately when reveal is called on an already visible window", async () => {
+    const { controller, hooks } = createControllerWithHooks();
+    await controller.ensureWindow();
+
+    await controller.reveal();
+    hooks.onWindowShown.mockClear();
+    await controller.reveal();
+
+    expect(hooks.onWindowShown).toHaveBeenCalledTimes(1);
   });
 });

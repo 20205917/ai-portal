@@ -105,8 +105,13 @@ export class MainWindowController {
   async reveal(): Promise<void> {
     const window = await this.ensureWindow();
     this.visibleByIntent = true;
-    if (!window.isVisible()) {
+    const alreadyVisible = window.isVisible();
+    if (!alreadyVisible) {
       window.show();
+    } else {
+      // When the window is already visible, no "show" event will fire.
+      // Emit once to keep reveal latency tracing aligned with this reveal action.
+      this.options.onWindowShown();
     }
     setImmediate(() => {
       if (!this.mainWindow || this.mainWindow.isDestroyed() || !this.visibleByIntent) {
