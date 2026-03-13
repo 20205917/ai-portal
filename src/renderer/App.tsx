@@ -11,6 +11,7 @@ import { useSidebarAutoHide } from "./app/hooks/useSidebarAutoHide";
 import { useSystemMetrics } from "./app/hooks/useSystemMetrics";
 import { useWebviewLifecycle } from "./app/hooks/useWebviewLifecycle";
 import type { View } from "./app/types";
+import { buildProviderSwitchFeedback } from "./app/ux-copy";
 
 const runtimeLabels: Record<RuntimeSnapshot["state"], string> = {
   stopped: "未启动",
@@ -25,6 +26,11 @@ const emptyForm: NewProviderInput = {
   icon: ""
 };
 
+interface FlowNotice {
+  key: number;
+  message: string;
+}
+
 export function App() {
   const [view, setView] = useState<View>("workspace");
   const [form, setForm] = useState<NewProviderInput>(emptyForm);
@@ -32,7 +38,9 @@ export function App() {
   const [formBusy, setFormBusy] = useState(false);
   const [settingsError, setSettingsError] = useState("");
   const [cachedEmbeddedProviderIds, setCachedEmbeddedProviderIds] = useState<string[]>([]);
+  const [flowNotice, setFlowNotice] = useState<FlowNotice | null>(null);
   const startupViewAppliedRef = useRef(false);
+  const flowNoticeSeqRef = useRef(0);
   const {
     loading,
     bootstrap,
@@ -76,6 +84,26 @@ export function App() {
   }, [bootstrap]);
   useEmbeddedAutoFallback(uiSettings.autoFallbackOnEmbedError, webviewState, activeEmbeddedProvider);
 
+  useEffect(() => {
+    if (!flowNotice) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setFlowNotice((current) => (current?.key === flowNotice.key ? null : current));
+    }, 1800);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [flowNotice]);
+
+  function showFlowNotice(message: string): void {
+    flowNoticeSeqRef.current += 1;
+    setFlowNotice({
+      key: flowNoticeSeqRef.current,
+      message
+    });
+  }
+
   const onEmbeddedCacheChanged = useCallback((providerIds: string[]) => {
     setCachedEmbeddedProviderIds((current) => {
       if (
@@ -98,10 +126,35 @@ export function App() {
   }
 
   async function openProvider(providerId: string) {
+    const targetProvider = providers.find((provider) => provider.id === providerId);
+    if (!targetProvider) {
+      return;
+    }
+    const isCurrentProvider = providerId === activeProviderId;
+    const wasRestoredFromCache = targetProvider.engine === "embedded" && cachedEmbeddedProviderIds.includes(providerId);
     setView("workspace");
     setActiveProviderId(providerId);
     setFormError("");
-    await window.aidc.selectProvider(providerId);
+    showFlowNotice(buildProviderSwitchFeedback(targetProvider, { isCurrentProvider, wasRestoredFromCache }));
+    try {
+      await window.aidc.selectProvider(providerId);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "打开服务失败。");
+    }
+  }
+
+  async function continueWithActiveProvider(): Promise<void> {
+    if (activeProvider.engine !== "isolated-external") {
+      await openProvider(activeProvider.id);
+      return;
+    }
+    setFormError("");
+    try {
+      await window.aidc.openExternalProvider(activeProvider.id);
+      showFlowNotice(`已打开 ${activeProvider.label} 独立窗口`);
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message : "打开独立窗口失败。");
+    }
   }
 
   async function hideWindow(): Promise<void> {
@@ -193,6 +246,12 @@ export function App() {
         />
 
         <main className="workspace">
+          {flowNotice ? (
+            <div className="flow-notice" key={flowNotice.key} role="status" aria-live="polite">
+              <span className="flow-notice-pill">{flowNotice.message}</span>
+            </div>
+          ) : null}
+
           {view === "home" ? (
             <HomeView
               providers={providers}
@@ -206,6 +265,7 @@ export function App() {
               formBusy={formBusy}
               formError={formError}
               setForm={setForm}
+              onContinueWithActiveProvider={continueWithActiveProvider}
               onOpenProvider={openProvider}
               onOpenSettings={() => setView("settings")}
               onHideWindow={hideWindow}

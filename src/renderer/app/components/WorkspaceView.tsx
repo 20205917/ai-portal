@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { LoadingOverlayMode, ProviderDefinition } from "../../../shared/types";
 import { partitionFor } from "../provider-visual";
 import type { WebviewHost, WebviewLoadState } from "../types";
+import { buildIsolatedWindowCopy, buildWorkspaceLoadingCopy } from "../ux-copy";
 
 interface WorkspaceViewProps {
   visible: boolean;
@@ -74,6 +75,13 @@ export function WorkspaceView(props: WorkspaceViewProps) {
     () => retainedEmbeddedProviderIds.filter((providerId) => providerId !== activeEmbeddedProviderId),
     [activeEmbeddedProviderId, retainedEmbeddedProviderIds]
   );
+  const isRestoringFromCache = Boolean(
+    activeEmbeddedProviderId && retainedEmbeddedProviderIds.includes(activeEmbeddedProviderId)
+  );
+  const loadingCopy = activeEmbeddedProvider
+    ? buildWorkspaceLoadingCopy(activeEmbeddedProvider, isRestoringFromCache)
+    : null;
+  const isolatedWindowCopy = buildIsolatedWindowCopy(activeProvider);
   const shouldShowLoadingOverlay = Boolean(
     activeEmbeddedProvider
     && (loadingOverlayMode === "immediate"
@@ -110,9 +118,10 @@ export function WorkspaceView(props: WorkspaceViewProps) {
               {shouldShowLoadingOverlay ? (
                 <div className="webview-overlay">
                   <div className="webview-overlay-card">
+                    {loadingCopy ? <span className="webview-overlay-eyebrow">{loadingCopy.eyebrow}</span> : null}
                     <div className="loading-dot" aria-hidden="true" />
-                    <strong>正在加载 {activeEmbeddedProvider.label}</strong>
-                    <p>正在连接目标站点，请稍候…</p>
+                    <strong>{loadingCopy?.title ?? `正在打开 ${activeEmbeddedProvider.label}`}</strong>
+                    <p>{loadingCopy?.description ?? "正在连接目标站点，请稍候…"}</p>
                   </div>
                 </div>
               ) : null}
@@ -146,14 +155,15 @@ export function WorkspaceView(props: WorkspaceViewProps) {
       {activeProvider.engine === "isolated-external" ? (
         <div className="isolated-placeholder">
           <div className="placeholder-card">
-            <h3>{activeProvider.label} 当前运行在独立窗口中</h3>
-            <p>这个模式下会启用专用独立窗口，仍然与普通浏览器彻底隔离。</p>
+            <span className="eyebrow">独立窗口模式</span>
+            <h3>{isolatedWindowCopy.title}</h3>
+            <p>{isolatedWindowCopy.description}</p>
             <button
               type="button"
               className="primary-action"
               onClick={() => void window.aidc.openExternalProvider(activeProvider.id)}
             >
-              打开或聚焦独立窗口
+              {isolatedWindowCopy.actionLabel}
             </button>
           </div>
         </div>

@@ -131,23 +131,29 @@ async function main() {
       });
     }
 
-    await page.getByRole("button", { name: "首页" }).click();
+    async function clickSidebarButton(name) {
+      await page.locator(".sidebar").hover();
+      await page.waitForTimeout(220);
+      await page.getByRole("button", { name }).first().click();
+    }
+
+    await clickSidebarButton("首页");
     await page.waitForTimeout(1000);
     await shot("01-home.png", "启动后首页");
 
-    await page.getByRole("button", { name: "ChatGPT" }).first().click();
+    await clickSidebarButton("ChatGPT");
     await page.waitForTimeout(3000);
     await shot("02-workspace-chatgpt.png", "工作区-ChatGPT");
 
-    await page.getByRole("button", { name: "豆包" }).first().click();
+    await clickSidebarButton("豆包");
     await page.waitForTimeout(9000);
     await shot("03-workspace-doubao.png", "工作区-豆包");
 
-    await page.getByRole("button", { name: "设置" }).click();
+    await clickSidebarButton("设置");
     await page.waitForTimeout(900);
     await shot("04-settings.png", "设置页");
 
-    await page.getByRole("button", { name: "ChatGPT" }).first().click();
+    await clickSidebarButton("ChatGPT");
     await page.waitForTimeout(800);
     await page.evaluate(() => {
       const host = window;
