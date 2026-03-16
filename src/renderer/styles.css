@@ -1173,7 +1173,6 @@ code {
   width: min(360px, 45vw);
 }
 
-.hotkey-controls select,
 .hotkey-controls input {
   height: 38px;
   border-radius: 10px;
@@ -1183,10 +1182,51 @@ code {
   padding: 0 10px;
 }
 
-.hotkey-controls select:focus,
 .hotkey-controls input:focus {
   border-color: rgba(52, 211, 153, 0.42);
   outline: none;
+}
+
+.hotkey-input.is-recording {
+  border-color: rgba(52, 211, 153, 0.42);
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.12);
+}
+
+.hotkey-input.is-invalid {
+  border-color: rgba(248, 113, 113, 0.48);
+}
+
+.hotkey-action-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hotkey-action-button {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.02);
+  color: inherit;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.hotkey-action-button:hover {
+  border-color: rgba(52, 211, 153, 0.42);
+  background: rgba(52, 211, 153, 0.08);
+}
+
+.hotkey-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.hotkey-hint {
+  color: var(--muted);
+}
+
+.hotkey-local-error {
+  color: #fecaca;
 }
 
 .shortcut-fallback {

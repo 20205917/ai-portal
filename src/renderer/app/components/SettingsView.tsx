@@ -1,6 +1,6 @@
-import { useEffect, useState, type CSSProperties, type ChangeEvent } from "react";
+import { useEffect, useState, type CSSProperties, type ChangeEvent, type KeyboardEvent } from "react";
 
-import { UI_KEEP_ALIVE_MAX, UI_KEEP_ALIVE_MIN } from "../../../shared/constants";
+import { DEFAULT_TOGGLE_WINDOW_HOTKEY, UI_KEEP_ALIVE_MAX, UI_KEEP_ALIVE_MIN } from "../../../shared/constants";
 import type {
   ShortcutAction,
   ShortcutStatus,
@@ -8,6 +8,11 @@ import type {
   UiSettings,
   UiSettingsPatch
 } from "../../../shared/types";
+import {
+  resolveHotkeyEditorCommand,
+  resolveHotkeySubmitValue,
+  shouldBypassHotkeyCapture
+} from "../hotkey-capture";
 import { InfoTip } from "./InfoTip";
 import { TopBanner } from "./TopBanner";
 
@@ -23,6 +28,15 @@ interface HotkeyActionSpec {
   title: string;
   allowUnset: boolean;
 }
+
+interface HotkeyDraftState {
+  value: string;
+  error: string;
+  recording: boolean;
+  saving: boolean;
+}
+
+type HotkeyDraftMap = Record<ShortcutAction, HotkeyDraftState>;
 
 const hotkeyActions: HotkeyActionSpec[] = [
   {
@@ -42,7 +56,7 @@ const hotkeyActions: HotkeyActionSpec[] = [
   }
 ];
 
-const hotkeyPresets = ["Ctrl+Alt+Q", "Ctrl+Alt+[", "Ctrl+Alt+]", "Ctrl+Alt+W", "Ctrl+Alt+E"];
+const HOTKEY_ACTIONS: ShortcutAction[] = ["toggleWindow", "providerNext", "providerPrev"];
 
 function stateLabel(state: ShortcutStatusItem["state"]): string {
   if (state === "registered") {
@@ -70,6 +84,69 @@ function hotkeyValue(settings: UiSettings, action: ShortcutAction): string | nul
   return settings.hotkeys.providerPrev;
 }
 
+function createDraftState(value: string): HotkeyDraftState {
+  return {
+    value,
+    error: "",
+    recording: false,
+    saving: false
+  };
+}
+
+function createHotkeyDrafts(settings: UiSettings): HotkeyDraftMap {
+  return {
+    toggleWindow: createDraftState(hotkeyValue(settings, "toggleWindow") ?? ""),
+    providerNext: createDraftState(hotkeyValue(settings, "providerNext") ?? ""),
+    providerPrev: createDraftState(hotkeyValue(settings, "providerPrev") ?? "")
+  };
+}
+
+function syncDraftsWithSettings(current: HotkeyDraftMap, settings: UiSettings): HotkeyDraftMap {
+  let changed = false;
+  const next: HotkeyDraftMap = { ...current };
+
+  for (const action of HOTKEY_ACTIONS) {
+    const previous = current[action];
+    if (previous.recording || previous.saving) {
+      continue;
+    }
+
+    const savedValue = hotkeyValue(settings, action) ?? "";
+    if (savedValue !== previous.value || previous.error) {
+      next[action] = {
+        ...previous,
+        value: savedValue,
+        error: ""
+      };
+      changed = true;
+    }
+  }
+
+  return changed ? next : current;
+}
+
+function buildHotkeyPatch(action: ShortcutAction, value: string | null): UiSettingsPatch {
+  if (action === "toggleWindow") {
+    return {
+      hotkeys: {
+        toggleWindow: value ?? DEFAULT_TOGGLE_WINDOW_HOTKEY
+      }
+    };
+  }
+  if (action === "providerNext") {
+    return {
+      hotkeys: {
+        providerNext: value
+      }
+    };
+  }
+  return {
+    hotkeys: {
+      providerPrev: value
+    }
+  };
+}
+
 export function SettingsView(props: SettingsViewProps) {
   const {
     uiSettings,
@@ -78,6 +155,7 @@ export function SettingsView(props: SettingsViewProps) {
     onUpdateUiSettings
   } = props;
   const [clipboardMessage, setClipboardMessage] = useState("");
+  const [hotkeyDrafts, setHotkeyDrafts] = useState<HotkeyDraftMap>(() => createHotkeyDrafts(uiSettings));
 
   useEffect(() => {
     if (uiSettings.backgroundResident) {
@@ -85,6 +163,14 @@ export function SettingsView(props: SettingsViewProps) {
     }
     void onUpdateUiSettings({ backgroundResident: true });
   }, [uiSettings.backgroundResident, onUpdateUiSettings]);
+
+  useEffect(() => {
+    setHotkeyDrafts((current) => syncDraftsWithSettings(current, uiSettings));
+  }, [
+    uiSettings.hotkeys.toggleWindow,
+    uiSettings.hotkeys.providerNext,
+    uiSettings.hotkeys.providerPrev
+  ]);
 
   const keepAliveRange = UI_KEEP_ALIVE_MAX - UI_KEEP_ALIVE_MIN;
   const keepAlivePercent = keepAliveRange > 0
@@ -110,20 +196,133 @@ export function SettingsView(props: SettingsViewProps) {
     void onUpdateUiSettings({ sidebarAutoHide });
   }
 
-  function updateHotkey(action: ShortcutAction, value: string): void {
-    const normalized = value.trim();
-    if (action === "toggleWindow") {
-      if (!normalized) {
-        return;
+  function updateHotkeyDraft(action: ShortcutAction, patch: Partial<HotkeyDraftState>): void {
+    setHotkeyDrafts((current) => {
+      const previous = current[action];
+      const nextItem: HotkeyDraftState = {
+        ...previous,
+        ...patch
+      };
+
+      if (
+        nextItem.value === previous.value
+        && nextItem.error === previous.error
+        && nextItem.recording === previous.recording
+        && nextItem.saving === previous.saving
+      ) {
+        return current;
       }
-      void onUpdateUiSettings({ hotkeys: { toggleWindow: normalized } });
+
+      return {
+        ...current,
+        [action]: nextItem
+      };
+    });
+  }
+
+  function restoreHotkeyDraft(action: ShortcutAction): void {
+    updateHotkeyDraft(action, {
+      value: hotkeyValue(uiSettings, action) ?? "",
+      error: "",
+      recording: false
+    });
+  }
+
+  async function commitHotkey(action: ShortcutAction, rawValue: string): Promise<void> {
+    const resolved = resolveHotkeySubmitValue(action, rawValue);
+    if (!resolved.ok) {
+      updateHotkeyDraft(action, {
+        error: resolved.message,
+        recording: false
+      });
       return;
     }
-    if (action === "providerNext") {
-      void onUpdateUiSettings({ hotkeys: { providerNext: normalized || null } });
+
+    const savedValue = hotkeyValue(uiSettings, action);
+    if (resolved.value === savedValue) {
+      updateHotkeyDraft(action, {
+        error: "",
+        recording: false
+      });
       return;
     }
-    void onUpdateUiSettings({ hotkeys: { providerPrev: normalized || null } });
+
+    updateHotkeyDraft(action, {
+      saving: true,
+      recording: false,
+      error: ""
+    });
+    try {
+      await onUpdateUiSettings(buildHotkeyPatch(action, resolved.value));
+    } catch {
+      updateHotkeyDraft(action, {
+        error: "保存失败，请重试。"
+      });
+    } finally {
+      updateHotkeyDraft(action, {
+        saving: false
+      });
+    }
+  }
+
+  function commitHotkeyDraft(action: ShortcutAction): void {
+    void commitHotkey(action, hotkeyDrafts[action].value);
+  }
+
+  function clearOptionalHotkey(action: ShortcutAction): void {
+    if (action === "toggleWindow") {
+      return;
+    }
+    updateHotkeyDraft(action, {
+      value: "",
+      error: ""
+    });
+    void commitHotkey(action, "");
+  }
+
+  function restoreDefaultToggleHotkey(): void {
+    updateHotkeyDraft("toggleWindow", {
+      value: DEFAULT_TOGGLE_WINDOW_HOTKEY,
+      error: ""
+    });
+    void commitHotkey("toggleWindow", DEFAULT_TOGGLE_WINDOW_HOTKEY);
+  }
+
+  function handleHotkeyKeyDown(action: ShortcutAction, event: KeyboardEvent<HTMLInputElement>): void {
+    const input = {
+      key: event.key,
+      code: event.code,
+      ctrlKey: event.ctrlKey,
+      altKey: event.altKey,
+      shiftKey: event.shiftKey,
+      metaKey: event.metaKey
+    };
+    if (shouldBypassHotkeyCapture(input)) {
+      return;
+    }
+
+    event.preventDefault();
+    const command = resolveHotkeyEditorCommand(input);
+    if (command.type === "submit") {
+      commitHotkeyDraft(action);
+      return;
+    }
+    if (command.type === "cancel") {
+      restoreHotkeyDraft(action);
+      event.currentTarget.blur();
+      return;
+    }
+    if (command.type === "capture") {
+      updateHotkeyDraft(action, {
+        value: command.accelerator,
+        error: ""
+      });
+      return;
+    }
+
+    updateHotkeyDraft(action, {
+      error: command.message
+    });
   }
 
   function copyFallbackCommand(command: string): void {
@@ -224,17 +423,24 @@ export function SettingsView(props: SettingsViewProps) {
             <InfoTip label="查看快捷键说明">
               <ul className="info-tip-list">
                 <li>默认 <code>Ctrl+Alt+Q</code>，<code>Ctrl+Alt+Tab</code> 与系统冲突概率高，不建议使用。</li>
+                <li>录制规则：至少包含一个修饰键（Ctrl/Alt/Shift/Cmd）。</li>
                 <li>请勿将系统快捷键绑定为 <code>npx aidc ...</code>，该路径会引入秒级启动开销。</li>
               </ul>
             </InfoTip>
           </div>
           <div className="hotkey-list">
             {hotkeyActions.map((item) => {
-              const currentValue = hotkeyValue(uiSettings, item.action) ?? "";
+              const draft = hotkeyDrafts[item.action];
+              const currentValue = draft?.value ?? "";
               const status = shortcutStatus[item.action];
               const statusText = stateLabel(status.state);
               const normalizedMessage = status.message.trim();
               const showStatusMessage = normalizedMessage.length > 0 && normalizedMessage !== statusText;
+              const inputClassName = [
+                "hotkey-input",
+                draft?.recording ? "is-recording" : "",
+                draft?.error ? "is-invalid" : ""
+              ].filter(Boolean).join(" ");
               return (
                 <div className="hotkey-row" key={item.action}>
                   <div className="hotkey-meta">
@@ -253,22 +459,53 @@ export function SettingsView(props: SettingsViewProps) {
                     ) : null}
                   </div>
                   <div className="hotkey-controls">
-                    <select
-                      value={hotkeyPresets.includes(currentValue) ? currentValue : ""}
-                      onChange={(event) => updateHotkey(item.action, event.target.value)}
-                    >
-                      {item.allowUnset ? <option value="">未设置</option> : null}
-                      {!item.allowUnset ? <option value="">选择预设</option> : null}
-                      {hotkeyPresets.map((preset) => (
-                        <option key={preset} value={preset}>{preset}</option>
-                      ))}
-                    </select>
                     <input
                       type="text"
                       value={currentValue}
-                      placeholder={item.allowUnset ? "留空表示不绑定" : "例如：Ctrl+Alt+Q"}
-                      onChange={(event) => updateHotkey(item.action, event.target.value)}
+                      className={inputClassName}
+                      placeholder={draft.recording ? "按下组合键..." : "按下组合键"}
+                      onFocus={() => updateHotkeyDraft(item.action, { recording: true, error: "" })}
+                      onBlur={() => commitHotkeyDraft(item.action)}
+                      onKeyDown={(event) => handleHotkeyKeyDown(item.action, event)}
+                      readOnly
+                      disabled={draft.saving}
+                      aria-invalid={Boolean(draft.error)}
                     />
+                    <div className="hotkey-action-row">
+                      <button
+                        type="button"
+                        className="hotkey-action-button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => restoreHotkeyDraft(item.action)}
+                        disabled={draft.saving}
+                      >
+                        恢复
+                      </button>
+                      {item.allowUnset ? (
+                        <button
+                          type="button"
+                          className="hotkey-action-button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => clearOptionalHotkey(item.action)}
+                          disabled={draft.saving}
+                        >
+                          清除
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="hotkey-action-button"
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={restoreDefaultToggleHotkey}
+                          disabled={draft.saving}
+                        >
+                          恢复默认
+                        </button>
+                      )}
+                    </div>
+                    {draft.recording ? <small className="hotkey-hint">按下组合键，Enter 提交，Esc 取消。</small> : null}
+                    {draft.saving ? <small className="hotkey-hint">保存中...</small> : null}
+                    {draft.error ? <small className="hotkey-local-error">{draft.error}</small> : null}
                   </div>
                 </div>
               );
