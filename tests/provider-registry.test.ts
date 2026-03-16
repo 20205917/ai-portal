@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveProviders } from "../src/main/provider-registry";
+import { resolveProviders } from "../src/main/provider/registry";
 import type { AppSettings, ProviderDefinition } from "../src/shared/types";
 
 function customProvider(): ProviderDefinition {

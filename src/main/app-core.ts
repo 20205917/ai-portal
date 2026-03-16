@@ -9,15 +9,15 @@ import {
   registerIpc
 } from "./ipc";
 import { MainWindowController } from "./main-window-controller";
-import { cycleEnabledProvider, type ProviderCycleDirection } from "./provider-cycle";
-import { ProviderIconOrchestrator } from "./provider-icon-orchestrator";
+import { cycleEnabledProvider, type ProviderCycleDirection } from "./provider/cycle";
+import { ProviderIconOrchestrator } from "./provider/icon-orchestrator";
 import {
   isProviderEngineAllowed,
   pickDefaultProvider,
   resolveProviders
-} from "./provider-registry";
+} from "./provider/registry";
 import { ShortcutManager } from "./shortcut-manager";
-import { AppStore } from "./store";
+import { AppStore } from "./state/store";
 import { TrayController } from "./tray-controller";
 import { parseAidcArgs, type CommandDiagnostics, type CommandPayload, type CommandResponse } from "../shared/commands";
 import type {

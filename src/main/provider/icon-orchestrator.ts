@@ -1,5 +1,5 @@
-import type { ProviderDefinition } from "../shared/types";
-import { ProviderIconService } from "./provider-icon-service";
+import type { ProviderDefinition } from "../../shared/types";
+import { ProviderIconService } from "./icon-service";
 
 interface ProviderIconOrchestratorOptions {
   saveProviderIconDataUrl: (providerId: string, iconDataUrl: string) => void;

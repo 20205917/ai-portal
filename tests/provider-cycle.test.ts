@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cycleEnabledProvider } from "../src/main/provider-cycle";
+import { cycleEnabledProvider } from "../src/main/provider/cycle";
 import type { ProviderDefinition } from "../src/shared/types";
 
 function provider(id: string, enabled = true): ProviderDefinition {

@@ -8,7 +8,7 @@ import {
   UI_KEEP_ALIVE_DEFAULT,
   UI_KEEP_ALIVE_MAX,
   UI_KEEP_ALIVE_MIN
-} from "../shared/constants";
+} from "../../shared/constants";
 import type {
   AppSettings,
   HotkeySettings,
@@ -21,7 +21,7 @@ import type {
   UiSettings,
   UiSettingsPatch,
   WindowBounds
-} from "../shared/types";
+} from "../../shared/types";
 
 interface RawSettings {
   version?: unknown;

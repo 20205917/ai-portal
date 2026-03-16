@@ -1,9 +1,9 @@
-import { defaultProviders } from "../shared/providers";
+import { defaultProviders } from "../../shared/providers";
 import type {
   AppSettings,
   ProviderDefinition,
   ProviderOverrides
-} from "../shared/types";
+} from "../../shared/types";
 
 function mergeProvider(provider: ProviderDefinition, overrides?: ProviderOverrides): ProviderDefinition {
   return {

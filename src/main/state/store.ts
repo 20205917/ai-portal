@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { SETTINGS_VERSION } from "../shared/constants";
+import { SETTINGS_VERSION } from "../../shared/constants";
 import type {
   AppSettings,
   NewProviderInput,
@@ -9,7 +9,7 @@ import type {
   RuntimeSnapshot,
   UiSettingsPatch,
   WindowBounds
-} from "../shared/types";
+} from "../../shared/types";
 import {
   createCustomProvider,
   defaultSettings,

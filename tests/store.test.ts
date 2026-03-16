@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { AppStore } from "../src/main/store";
+import { AppStore } from "../src/main/state/store";
 import { SETTINGS_VERSION } from "../src/shared/constants";
 
 const tempDirs: string[] = [];

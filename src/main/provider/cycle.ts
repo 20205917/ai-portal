@@ -1,4 +1,4 @@
-import type { ProviderDefinition } from "../shared/types";
+import type { ProviderDefinition } from "../../shared/types";
 
 export type ProviderCycleDirection = "next" | "prev";
 

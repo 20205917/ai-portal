@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { ProviderIconService } from "../src/main/provider-icon-service";
+import { ProviderIconService } from "../src/main/provider/icon-service";
 
 const tinyPng = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7+LwAAAABJRU5ErkJggg==",
