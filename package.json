@@ -1,8 +1,8 @@
 {
   "name": "AIProtal",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
-  "description": "AIProtal is a Linux / Windows AI launcher with a dedicated desktop shell for precise toggle and focus workflows.",
+  "description": "AIProtal is a Linux / Windows / macOS AI launcher with a dedicated desktop shell for precise toggle and focus workflows.",
   "author": {
     "name": "zhangyj",
     "email": "zyj20205917@gmail"
@@ -23,6 +23,7 @@
     "check:protocol": "node scripts/check-protocol.mjs",
     "package:deb": "npm run clean:release && npm run build && electron-builder --linux deb --x64 --publish never",
     "package:exe": "npm run clean:release && npm run build && electron-builder --win nsis --x64 --publish never",
+    "package:dmg": "npm run clean:release && npm run build && electron-builder --mac dmg --x64 --arm64 --publish never",
     "package:release": "npm run clean:release && npm run build && electron-builder --x64 --publish never",
     "verify:gate": "bash scripts/verify-gate.sh",
     "verify:visual": "node scripts/verify-visual.mjs"

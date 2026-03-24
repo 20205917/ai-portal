@@ -1,5 +1,4 @@
 import { useEffect, useState, type CSSProperties, type ChangeEvent, type KeyboardEvent } from "react";
-
 import { DEFAULT_TOGGLE_WINDOW_HOTKEY, UI_KEEP_ALIVE_MAX, UI_KEEP_ALIVE_MIN } from "../../../shared/constants";
 import type {
   ShortcutAction,
@@ -18,6 +17,7 @@ import { TopBanner } from "./TopBanner";
 
 interface SettingsViewProps {
   uiSettings: UiSettings;
+  launchAtLoginSupported: boolean;
   shortcutStatus: ShortcutStatus;
   settingsError: string;
   onUpdateUiSettings: (patch: UiSettingsPatch) => Promise<void>;
@@ -150,6 +150,7 @@ function buildHotkeyPatch(action: ShortcutAction, value: string | null): UiSetti
 export function SettingsView(props: SettingsViewProps) {
   const {
     uiSettings,
+    launchAtLoginSupported,
     shortcutStatus,
     settingsError,
     onUpdateUiSettings
@@ -194,6 +195,16 @@ export function SettingsView(props: SettingsViewProps) {
       return;
     }
     void onUpdateUiSettings({ sidebarAutoHide });
+  }
+
+  function setLaunchAtLogin(launchAtLogin: boolean): void {
+    if (!launchAtLoginSupported) {
+      return;
+    }
+    if (launchAtLogin === uiSettings.launchAtLogin) {
+      return;
+    }
+    void onUpdateUiSettings({ launchAtLogin });
   }
 
   function updateHotkeyDraft(action: ShortcutAction, patch: Partial<HotkeyDraftState>): void {
@@ -362,6 +373,34 @@ export function SettingsView(props: SettingsViewProps) {
                 onChange={setKeepAlive}
                 aria-label="保活数量"
               />
+            </div>
+          </div>
+        </article>
+        <article className="panel">
+          <div className="settings-option-row">
+            <span className="settings-option-name">开机自启</span>
+            <span className="settings-option-detail">
+              {launchAtLoginSupported
+                ? "系统登录后静默启动并驻留托盘，不主动弹出主窗口。"
+                : "当前平台暂不支持（仅 macOS / Windows）。"}
+            </span>
+            <div className="segment-control">
+              <button
+                type="button"
+                className={uiSettings.launchAtLogin ? "is-active" : ""}
+                onClick={() => setLaunchAtLogin(true)}
+                disabled={!launchAtLoginSupported}
+              >
+                开启
+              </button>
+              <button
+                type="button"
+                className={!uiSettings.launchAtLogin ? "is-active" : ""}
+                onClick={() => setLaunchAtLogin(false)}
+                disabled={!launchAtLoginSupported}
+              >
+                关闭
+              </button>
             </div>
           </div>
         </article>

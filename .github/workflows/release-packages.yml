@@ -35,6 +35,10 @@ jobs:
             package_script: package:exe
             artifact_name: aidc-exe
             artifact_path: release/*.exe
+          - os: macos-latest
+            package_script: package:dmg
+            artifact_name: aidc-dmg
+            artifact_path: release/*.dmg
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -136,10 +140,10 @@ jobs:
               per_page: 100,
             });
             const packageArtifacts = artifacts
-              .filter((artifact) => ["aidc-deb", "aidc-exe"].includes(artifact.name))
+              .filter((artifact) => ["aidc-deb", "aidc-exe", "aidc-dmg"].includes(artifact.name))
               .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             const keepArtifactIds = new Set();
-            for (const name of ["aidc-deb", "aidc-exe"]) {
+            for (const name of ["aidc-deb", "aidc-exe", "aidc-dmg"]) {
               const latest = packageArtifacts.find((artifact) => artifact.name === name);
               if (latest) {
                 keepArtifactIds.add(latest.id);

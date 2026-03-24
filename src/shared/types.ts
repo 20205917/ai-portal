@@ -99,6 +99,7 @@ export type ShortcutStatus = Record<ShortcutAction, ShortcutStatusItem>;
 export interface UiSettings {
   keepAliveLimit: number;
   backgroundResident: boolean;
+  launchAtLogin: boolean;
   sidebarAutoHide: boolean;
   startupView: StartupView;
   loadingOverlayMode: LoadingOverlayMode;
@@ -109,6 +110,7 @@ export interface UiSettings {
 export interface UiSettingsPatch {
   keepAliveLimit?: number;
   backgroundResident?: boolean;
+  launchAtLogin?: boolean;
   sidebarAutoHide?: boolean;
   startupView?: StartupView;
   loadingOverlayMode?: LoadingOverlayMode;
@@ -132,6 +134,7 @@ export interface BootstrapPayload {
   configDir: string;
   socketPath: string;
   environment: HostEnvironment;
+  launchAtLoginSupported: boolean;
   providers: ProviderDefinition[];
   activeProviderId: string;
   runtime: RuntimeSnapshot;

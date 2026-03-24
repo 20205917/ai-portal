@@ -28,6 +28,7 @@ describe("resolveProviders", () => {
       ui: {
         keepAliveLimit: 3,
         backgroundResident: true,
+        launchAtLogin: false,
         sidebarAutoHide: false,
         startupView: "workspace",
         loadingOverlayMode: "immediate",
@@ -64,6 +65,7 @@ describe("resolveProviders", () => {
       ui: {
         keepAliveLimit: 3,
         backgroundResident: true,
+        launchAtLogin: false,
         sidebarAutoHide: false,
         startupView: "workspace",
         loadingOverlayMode: "immediate",

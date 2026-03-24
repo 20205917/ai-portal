@@ -261,6 +261,7 @@ export function App() {
           {view === "settings" ? (
             <SettingsView
               uiSettings={uiSettings}
+              launchAtLoginSupported={bootstrap.launchAtLoginSupported}
               shortcutStatus={shortcutStatus}
               settingsError={settingsError}
               onUpdateUiSettings={updateUiSettings}

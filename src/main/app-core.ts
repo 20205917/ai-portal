@@ -9,6 +9,11 @@ import {
   registerIpc
 } from "./ipc";
 import { MainWindowController } from "./main-window-controller";
+import {
+  applyLaunchAtLoginPreference,
+  isLaunchAtLoginSupported,
+  type LaunchAtLoginState
+} from "./login-item";
 import { cycleEnabledProvider, type ProviderCycleDirection } from "./provider/cycle";
 import { ProviderIconOrchestrator } from "./provider/icon-orchestrator";
 import {
@@ -31,6 +36,7 @@ import type {
   SystemMetricsSnapshot,
   UiSettingsPatch
 } from "../shared/types";
+import { createFallbackSystemMetricsSnapshot } from "./system-metrics-fallback";
 import { aggregateSystemMetrics } from "./system-metrics";
 
 interface RevealTrigger {
@@ -65,6 +71,8 @@ export class AppCore {
   private commandDiagnostics: CommandDiagnostics = {};
   private trayController: TrayController | null = null;
   private windowActionChain: Promise<void> = Promise.resolve();
+  private launchAtLoginSupported = isLaunchAtLoginSupported(process.platform);
+  private shouldStartHiddenFromLoginLaunch = false;
 
   constructor(private readonly options: AppCoreOptions) {
     this.store = new AppStore(options.configDir);
@@ -123,6 +131,7 @@ export class AppCore {
       getConfigDir: () => this.options.configDir,
       getSocketPath: () => this.options.socketPath,
       getEnvironment: () => this.options.hostEnvironment,
+      getLaunchAtLoginSupported: () => this.launchAtLoginSupported,
       getUiSettings: () => this.getSettings().ui,
       getShortcutStatus: () => this.shortcutStatus,
       getSystemMetrics: () => this.getSystemMetrics(),
@@ -138,6 +147,22 @@ export class AppCore {
       },
       hideWindow: async () => this.hideMainWindow()
     });
+  }
+
+  initializeLaunchAtLogin(state: LaunchAtLoginState): void {
+    this.launchAtLoginSupported = state.supported;
+    this.shouldStartHiddenFromLoginLaunch = state.shouldStartHidden;
+    if (!state.supported) {
+      if (this.getSettings().ui.launchAtLogin) {
+        this.store.saveUiSettings({ launchAtLogin: false });
+      }
+      return;
+    }
+
+    if (this.getSettings().ui.launchAtLogin === state.enabled) {
+      return;
+    }
+    this.store.saveUiSettings({ launchAtLogin: state.enabled });
   }
 
   async start(initialCommand: CommandPayload): Promise<void> {
@@ -157,15 +182,18 @@ export class AppCore {
     });
     this.trayController = tray.isAvailable() ? tray : null;
 
-    if (initialCommand.command === "hide") {
+    const startupCommand = this.shouldStartHiddenFromLoginLaunch
+      ? { command: "hide" as const }
+      : initialCommand;
+    if (startupCommand.command === "hide") {
       await this.hideMainWindow();
       return;
     }
-    if (initialCommand.command === "status") {
+    if (startupCommand.command === "status") {
       this.syncRuntime();
       return;
     }
-    await this.handleCommand(initialCommand);
+    await this.handleCommand(startupCommand);
   }
 
   handleSecondInstance(argv: string[]): void {
@@ -330,6 +358,17 @@ export class AppCore {
   }
 
   private async updateUiSettings(patch: UiSettingsPatch): Promise<void> {
+    if (typeof patch.launchAtLogin === "boolean") {
+      if (!this.launchAtLoginSupported) {
+        throw new Error("当前平台暂不支持开机自启。");
+      }
+      applyLaunchAtLoginPreference({
+        enabled: patch.launchAtLogin,
+        platform: process.platform,
+        execPath: process.execPath,
+        setLoginItemSettings: (settings) => app.setLoginItemSettings(settings)
+      });
+    }
     this.store.saveUiSettings(patch);
     if (patch.hotkeys) {
       this.shortcutStatus = this.shortcutManager.apply(this.getSettings().ui.hotkeys);
@@ -356,22 +395,7 @@ export class AppCore {
     try {
       return aggregateSystemMetrics(app.getAppMetrics());
     } catch {
-      return {
-        cpuPercent: 0,
-        memoryMb: 0,
-        privateMemoryMb: 0,
-        privateMemorySupported: false,
-        processCount: 0,
-        memoryByProcessType: {
-          browserMb: 0,
-          gpuMb: 0,
-          tabMb: 0,
-          networkServiceMb: 0,
-          utilityMb: 0,
-          otherMb: 0
-        },
-        updatedAt: new Date().toISOString()
-      };
+      return createFallbackSystemMetricsSnapshot();
     }
   }
 

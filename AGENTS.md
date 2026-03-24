@@ -10,7 +10,7 @@
 - `src/shared`：协议与共享类型
 - `scripts`：开发脚本、校验脚本、发布辅助脚本
 - `tests`：Vitest 单元测试
-- `.github/workflows/release-packages.yml`：tag 触发的 `.deb/.exe` 打包与发布
+- `.github/workflows/release-packages.yml`：tag 触发的 `.deb/.exe/.dmg` 打包与发布
 
 ## 常用命令
 
@@ -39,6 +39,7 @@ npm run verify:visual
 ```bash
 npm run package:deb
 npm run package:exe
+npm run package:dmg
 npm run package:release
 ```
 
@@ -78,7 +79,7 @@ python3 "$CODEX_HOME/skills/dev2release/scripts/conventional_changelog.py" \
 ```bash
 npm version 1.0.0 --no-git-tag-version
 git add package.json package-lock.json electron-builder.yml .github/workflows/release-packages.yml README.md AGENTS.md CHANGELOG.md RELEASE_NOTES.md
-git commit -m "chore(release): v1.0.0 add deb/exe packaging"
+git commit -m "chore(release): v1.0.0 add deb/exe/dmg packaging"
 
 git tag -a "v1.0.0" -m "release v1.0.0"
 git push origin HEAD
@@ -91,6 +92,7 @@ git push origin "v1.0.0"
 
 - `ubuntu-latest` 产出 `.deb`
 - `windows-latest` 产出 `.exe`（NSIS）
+- `macos-latest` 产出 `.dmg`（x64/arm64）
 - 上传 workflow artifacts
 - 自动附加到 GitHub Release `vX.Y.Z`
 

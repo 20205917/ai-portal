@@ -55,6 +55,21 @@ describe("paths", () => {
     expect(resolveSocketPath(configDir, { env, platform: "win32" })).toBe("\\\\.\\pipe\\aidc-demo-user");
   });
 
+  it("resolves macOS config/runtime/socket paths", () => {
+    const env = {} as NodeJS.ProcessEnv;
+    const configDir = resolveConfigDir({
+      env,
+      platform: "darwin",
+      homeDir: "/Users/demo"
+    });
+
+    expect(configDir).toBe("/Users/demo/Library/Application Support/AIProtal");
+    expect(resolveRuntimeDir(configDir, { env, platform: "darwin" })).toBe(configDir);
+    expect(resolveSocketPath(configDir, { env, platform: "darwin" })).toBe(
+      "/Users/demo/Library/Application Support/AIProtal/aidc.sock"
+    );
+  });
+
   it("detects named pipe endpoints", () => {
     expect(isNamedPipeEndpoint("\\\\.\\pipe\\aidc-demo")).toBe(true);
     expect(isNamedPipeEndpoint("/tmp/aidc.sock")).toBe(false);

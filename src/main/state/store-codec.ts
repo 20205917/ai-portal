@@ -56,6 +56,7 @@ export function defaultUiSettings(): UiSettings {
   return {
     keepAliveLimit: UI_KEEP_ALIVE_DEFAULT,
     backgroundResident: true,
+    launchAtLogin: false,
     sidebarAutoHide: false,
     startupView: "workspace",
     loadingOverlayMode: "immediate",
@@ -151,6 +152,9 @@ function parseUiSettings(value: unknown, fallback: UiSettings = defaultUiSetting
     backgroundResident: typeof value.backgroundResident === "boolean"
       ? value.backgroundResident
       : fallback.backgroundResident,
+    launchAtLogin: typeof value.launchAtLogin === "boolean"
+      ? value.launchAtLogin
+      : fallback.launchAtLogin,
     sidebarAutoHide: typeof value.sidebarAutoHide === "boolean" ? value.sidebarAutoHide : fallback.sidebarAutoHide,
     startupView: isStartupView(value.startupView) ? value.startupView : fallback.startupView,
     loadingOverlayMode: isLoadingOverlayMode(value.loadingOverlayMode)

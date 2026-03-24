@@ -72,6 +72,9 @@ export function resolveConfigDir(env = process.env, options = {}) {
     const root = env.APPDATA || pathModule.join(homeDir, "AppData", "Roaming");
     return pathModule.join(root, APP_DIR_NAME);
   }
+  if (platform === "darwin") {
+    return pathModule.join(homeDir, "Library", "Application Support", APP_DIR_NAME);
+  }
   const root = env.XDG_CONFIG_HOME || pathModule.join(homeDir, ".config");
   return pathModule.join(root, APP_DIR_NAME);
 }
@@ -107,4 +110,11 @@ export function buildElectronFlags(env = process.env, options = {}) {
     flags.push("--disable-software-rasterizer");
   }
   return flags;
+}
+
+export function withRuntimeDefaults(baseEnv = process.env) {
+  return {
+    ...baseEnv,
+    AIPROTAL_NO_SANDBOX: baseEnv.AIPROTAL_NO_SANDBOX || "1"
+  };
 }

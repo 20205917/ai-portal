@@ -35,6 +35,17 @@ describe("runtime-env parity", () => {
     expect(runtimeEnv.resolveSocketPath(env, options)).toBe(resolveMainSocketPath(mainConfigDir, { env, ...options }));
   });
 
+  it("matches main path rules on macOS", async () => {
+    const runtimeEnv = await import("../scripts/lib/runtime-env.mjs");
+    const env = {} as NodeJS.ProcessEnv;
+    const options = { platform: "darwin" as const, homeDir: "/Users/demo" };
+    const mainConfigDir = resolveMainConfigDir({ env, ...options });
+
+    expect(runtimeEnv.resolveConfigDir(env, options)).toBe(mainConfigDir);
+    expect(runtimeEnv.resolveRuntimeDir(env, options)).toBe(resolveMainRuntimeDir(mainConfigDir, { env, ...options }));
+    expect(runtimeEnv.resolveSocketPath(env, options)).toBe(resolveMainSocketPath(mainConfigDir, { env, ...options }));
+  });
+
   it("disables no-sandbox by default", async () => {
     const runtimeEnv = await import("../scripts/lib/runtime-env.mjs");
     const env = {} as NodeJS.ProcessEnv;

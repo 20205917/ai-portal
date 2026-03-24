@@ -12,6 +12,7 @@ import { DEFAULT_TOGGLE_WINDOW_HOTKEY, UI_KEEP_ALIVE_DEFAULT } from "../../../sh
 const defaultUiSettings: UiSettings = {
   keepAliveLimit: UI_KEEP_ALIVE_DEFAULT,
   backgroundResident: true,
+  launchAtLogin: false,
   sidebarAutoHide: false,
   startupView: "workspace",
   loadingOverlayMode: "immediate",

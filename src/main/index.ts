@@ -6,6 +6,7 @@ import { AppCore } from "./app-core";
 import { shouldDisable3dApis, shouldDisableGpu, shouldEnableNoSandbox } from "./env";
 import { resolveSocketPath, resolveConfigDir } from "./paths";
 import { resolveHostEnvironment } from "./host-environment";
+import { resolveLaunchAtLoginState } from "./login-item";
 import { APP_ID, APP_NAME } from "../shared/constants";
 import { parseAidcArgs } from "../shared/commands";
 
@@ -61,6 +62,13 @@ if (!allowMultiInstance) {
 }
 
 app.whenReady().then(async () => {
+  const launchAtLoginState = resolveLaunchAtLoginState({
+    platform: process.platform,
+    argv: process.argv,
+    execPath: process.execPath,
+    getLoginItemSettings: (options) => app.getLoginItemSettings(options)
+  });
+  core.initializeLaunchAtLogin(launchAtLoginState);
   await core.start(initialCommand);
 });
 

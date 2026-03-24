@@ -6,14 +6,13 @@ import http from "node:http";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
-import { buildElectronFlags } from "./lib/runtime-env.mjs";
+import { buildElectronFlags, withRuntimeDefaults } from "./lib/runtime-env.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const env = {
-  ...process.env,
+  ...withRuntimeDefaults(process.env),
   AIPROTAL_RENDERER_URL: "http://127.0.0.1:5173",
-  AIPROTAL_NO_SANDBOX: process.env.AIPROTAL_NO_SANDBOX || "1"
 };
 delete env.ELECTRON_RUN_AS_NODE;
 const electronFlags = buildElectronFlags(env);

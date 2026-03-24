@@ -20,6 +20,7 @@ interface IpcContext {
   getConfigDir: () => string;
   getSocketPath: () => string;
   getEnvironment: () => HostEnvironment;
+  getLaunchAtLoginSupported: () => boolean;
   getUiSettings: () => UiSettings;
   getShortcutStatus: () => ShortcutStatus;
   getSystemMetrics: () => SystemMetricsSnapshot;
@@ -41,6 +42,7 @@ export function registerIpc(context: IpcContext): void {
       configDir: context.getConfigDir(),
       socketPath: context.getSocketPath(),
       environment: context.getEnvironment(),
+      launchAtLoginSupported: context.getLaunchAtLoginSupported(),
       providers: context.getProviders(),
       activeProviderId: context.getActiveProviderId(),
       runtime: context.getRuntime(),

@@ -55,6 +55,7 @@ function sameUiSettings(left: AppSettings["ui"], right: AppSettings["ui"]): bool
   return (
     left.keepAliveLimit === right.keepAliveLimit
     && left.backgroundResident === right.backgroundResident
+    && left.launchAtLogin === right.launchAtLogin
     && left.sidebarAutoHide === right.sidebarAutoHide
     && left.startupView === right.startupView
     && left.loadingOverlayMode === right.loadingOverlayMode

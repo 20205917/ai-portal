@@ -51,6 +51,9 @@ export function resolveConfigDir(options: ResolvePathOptions = {}): string {
     const root = env.APPDATA || pathModule.join(homeDir, "AppData", "Roaming");
     return pathModule.join(root, APP_DIR_NAME);
   }
+  if (platform === "darwin") {
+    return pathModule.join(homeDir, "Library", "Application Support", APP_DIR_NAME);
+  }
 
   const root = env.XDG_CONFIG_HOME || pathModule.join(homeDir, ".config");
   return pathModule.join(root, APP_DIR_NAME);

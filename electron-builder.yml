@@ -37,6 +37,14 @@ win:
       arch:
         - x64
 
+mac:
+  icon: assets/icon.png
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+
 nsis:
   oneClick: false
   perMachine: false

@@ -26,6 +26,7 @@ describe("AppStore", () => {
     store.saveProviderIconDataUrl("chatgpt", "data:image/png;base64,AA==");
     store.saveUiSettings({
       keepAliveLimit: 5,
+      launchAtLogin: true,
       sidebarAutoHide: true,
       startupView: "home",
       loadingOverlayMode: "strict",
@@ -56,6 +57,7 @@ describe("AppStore", () => {
     expect(settings.ui).toEqual({
       keepAliveLimit: 5,
       backgroundResident: true,
+      launchAtLogin: true,
       sidebarAutoHide: true,
       startupView: "home",
       loadingOverlayMode: "strict",
@@ -102,6 +104,7 @@ describe("AppStore", () => {
     expect(settings.customProviders).toEqual([]);
     expect(settings.ui.keepAliveLimit).toBe(3);
     expect(settings.ui.backgroundResident).toBe(true);
+    expect(settings.ui.launchAtLogin).toBe(false);
     expect(settings.ui.sidebarAutoHide).toBe(false);
     expect(settings.ui.startupView).toBe("workspace");
     expect(settings.ui.loadingOverlayMode).toBe("immediate");
@@ -179,6 +182,7 @@ describe("AppStore", () => {
     expect(reloaded.getSettings().ui).toEqual({
       keepAliveLimit: 5,
       backgroundResident: true,
+      launchAtLogin: false,
       sidebarAutoHide: true,
       startupView: "home",
       loadingOverlayMode: "strict",
@@ -223,5 +227,6 @@ describe("AppStore", () => {
       providerPrev: null
     });
     expect(settings.ui.backgroundResident).toBe(true);
+    expect(settings.ui.launchAtLogin).toBe(false);
   });
 });
