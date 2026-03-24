@@ -12,6 +12,36 @@ AIProtal 是一个我自己日常在 Linux / Windows / macOS 上使用的桌面 
 - 侧栏与模式切换：支持侧栏显示/隐藏、内嵌模式与独立窗口回退
 - 运行状态可观测：主页可查看窗口状态、内存与缓存信息
 
+## 下载安装
+
+发布版本统一使用 GitHub Release，版本号格式为 `vX.Y.Z`（例如 `v1.0.0`）。
+
+- 最新版本下载页：[Latest Release](https://github.com/20205917/ai-portal/releases/latest)
+- 历史版本下载页：[Releases](https://github.com/20205917/ai-portal/releases)
+- Linux `.deb` 直链模板（将 `<version>` 替换为版本号，如 `1.0.2`）：`https://github.com/20205917/ai-portal/releases/download/v<version>/AIProtal-<version>-linux-amd64.deb`
+- Windows `.exe` 直链模板（将 `<version>` 替换为版本号，如 `1.0.2`）：`https://github.com/20205917/ai-portal/releases/download/v<version>/AIProtal-<version>-win-x64.exe`
+- macOS `.dmg` 直链模板（将 `<version>` 替换为版本号，如 `1.0.2`）：`https://github.com/20205917/ai-portal/releases/download/v<version>/AIProtal-<version>-mac-<arch>.dmg`
+
+### Linux (`.deb`) 安装
+
+```bash
+sudo dpkg -i AIProtal-<version>-linux-amd64.deb
+# 若出现依赖问题
+sudo apt-get -f install
+```
+
+### Windows (`.exe`) 安装
+
+1. 双击 `AIProtal-<version>-win-x64.exe`
+2. 按安装向导完成安装
+3. 从开始菜单启动 `AIProtal`
+
+### macOS (`.dmg`) 安装
+
+1. 打开 `AIProtal-<version>-mac-<arch>.dmg`
+2. 拖动 `AIProtal.app` 到 `Applications`
+3. 首次运行若提示“来源未验证”，在系统设置中手动放行后再启动
+
 ## 功能截图
 
 ### 首页
@@ -49,36 +79,6 @@ AIProtal 是一个我自己日常在 Linux / Windows / macOS 上使用的桌面 
 ## 设计灵感
 
 项目交互思路灵感来自罗技 AI 调度台的“快速唤起、低打断、统一入口”理念，并结合 Linux / Windows 的桌面行为做了工程化落地。
-
-## 下载安装
-
-发布版本统一使用 GitHub Release，版本号格式为 `vX.Y.Z`（例如 `v1.0.0`）。
-
-- 最新版本下载页：[Latest Release](https://github.com/20205917/ai-portal/releases/latest)
-- 历史版本下载页：[Releases](https://github.com/20205917/ai-portal/releases)
-- Linux `.deb` 直链模板（将 `<version>` 替换为版本号，如 `1.0.2`）：`https://github.com/20205917/ai-portal/releases/download/v<version>/AIProtal-<version>-linux-amd64.deb`
-- Windows `.exe` 直链模板（将 `<version>` 替换为版本号，如 `1.0.2`）：`https://github.com/20205917/ai-portal/releases/download/v<version>/AIProtal-<version>-win-x64.exe`
-- macOS `.dmg` 直链模板（将 `<version>` 替换为版本号，如 `1.0.2`）：`https://github.com/20205917/ai-portal/releases/download/v<version>/AIProtal-<version>-mac-<arch>.dmg`
-
-### Linux (`.deb`) 安装
-
-```bash
-sudo dpkg -i AIProtal-<version>-linux-amd64.deb
-# 若出现依赖问题
-sudo apt-get -f install
-```
-
-### Windows (`.exe`) 安装
-
-1. 双击 `AIProtal-<version>-win-x64.exe`
-2. 按安装向导完成安装
-3. 从开始菜单启动 `AIProtal`
-
-### macOS (`.dmg`) 安装
-
-1. 打开 `AIProtal-<version>-mac-<arch>.dmg`
-2. 拖动 `AIProtal.app` 到 `Applications`
-3. 首次运行若提示“来源未验证”，在系统设置中手动放行后再启动
 
 ## 最小使用路径
 
